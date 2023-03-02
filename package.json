@@ -46,6 +46,9 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "zod": "^3.20.6"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^0.35.3",
     "@antfu/ni": "^0.20.0",
@@ -61,7 +64,8 @@
     "typescript": "^4.9.5",
     "unbuild": "^1.1.2",
     "vite": "^4.1.4",
-    "vitest": "^0.28.5"
+    "vitest": "^0.28.5",
+    "vue": "^3.2.47"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
