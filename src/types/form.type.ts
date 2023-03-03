@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import type { DeepPartial } from './utils.type'
 import type { FieldPath, FieldPathValue } from './eager.type'
 
 type MaybePromise<T> = T | Promise<T>
@@ -23,13 +24,13 @@ export interface UseForm<T extends z.ZodType> {
   isSubmitting: boolean
   errors: z.ZodFormattedError<z.infer<T>>
   register: Register<T>
-  setValues: (values: { [K in keyof z.infer<T>]?: z.infer<T>[K] }) => void
-  setErrors: (errors: { [K in keyof z.infer<T>]?: string[] }) => void
+  setValues: (values: DeepPartial<z.infer<T>>) => void
+  setErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
   submit: () => Promise<void>
   prepare: () => Promise<void>
 }
 
 export interface Callbacks<T extends z.ZodType> {
-  onPrepare?: () => MaybePromise<{ [K in keyof z.infer<T>]?: z.infer<T>[K] } | null>
-  onSubmit: (data: z.infer<T>) => MaybePromise<{ [K in keyof z.infer<T>]?: string[] } | null>
+  onPrepare?: () => MaybePromise<z.infer<T> | null>
+  onSubmit: (data: z.infer<T>) => MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>> | null>
 }

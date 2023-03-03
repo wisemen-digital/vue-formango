@@ -9,6 +9,7 @@ import {
 
 import type {
   Callbacks,
+  DeepPartial,
   Register,
   UseForm,
 } from '../types'
@@ -58,8 +59,9 @@ export default <T extends z.ZodType>(schema: T, {
 
       return existingField
     }
+
     const fieldErrors = computed(
-      () => (errors as any)[fieldPath],
+      () => errors.value[fieldPath],
     )
 
     const field = reactive<any>({
@@ -112,7 +114,7 @@ export default <T extends z.ZodType>(schema: T, {
     immediate: true,
   })
 
-  const setValues = (values: { [K in keyof z.infer<T>]?: z.infer<T>[K] }): void => {
+  const setValues = (values: DeepPartial<z.infer<T>>): void => {
     const set = (obj: any, set: any): void => {
       for (const key in obj) {
         if (typeof obj[key] === 'object' && obj[key] != null && set[key] != null)
@@ -126,18 +128,8 @@ export default <T extends z.ZodType>(schema: T, {
     set(form, values)
   }
 
-  const setErrors = (err: { [K in keyof z.infer<T>]?: string[] }): void => {
-    const set = (obj: any, set: any): void => {
-      for (const key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] != null && set[key] != null)
-          return set(obj[key], set[key])
-
-        if (set[key] != null)
-          obj[key] = set[key]
-      }
-    }
-
-    set(errors.value, err)
+  const setErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
+    errors.value = err
   }
 
   const prepare = async (): Promise<void> => {
