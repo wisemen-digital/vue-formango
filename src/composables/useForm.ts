@@ -45,6 +45,16 @@ export default <T extends z.ZodType>(schema: T, {
     setObjectValueByPath(obj[path[0]], path.slice(1), value)
   }
 
+  const getObjectValueByPath = (obj: any, path: Array<string | number>): any => {
+    if (path.length === 1)
+      return obj[path[0]]
+
+    if (obj[path[0]] == null)
+      return undefined
+
+    return getObjectValueByPath(obj[path[0]], path.slice(1))
+  }
+
   const register: Register<T> = (fieldPath, defaultValue: unknown = null) => {
     const exists = [...registeredFields.keys()].some(key => key.includes(fieldPath))
 
@@ -61,11 +71,13 @@ export default <T extends z.ZodType>(schema: T, {
     }
 
     const fieldErrors = computed(
-      () => errors.value[fieldPath],
+      () => getObjectValueByPath(errors.value, fieldPath.split('.')),
     )
 
+    const value = computed(() => getObjectValueByPath(form, fieldPath.split('.')))
+
     const field = reactive<any>({
-      'modelValue': form[fieldPath],
+      'modelValue': value,
       'errors': fieldErrors,
       'isTouched': false,
       'isDirty': false,
@@ -74,17 +86,14 @@ export default <T extends z.ZodType>(schema: T, {
       },
       'onUpdate:modelValue': (value: unknown) => {
         const v = value === '' ? null : value
-
-        field.modelValue = v
-
         setObjectValueByPath(form, fieldPath.split('.'), v)
       },
     })
 
     registeredFields.set(fieldPath, field)
 
-    watch(() => form[fieldPath], () => {
-      field.modelValue = form[fieldPath]
+    watch(() => value, () => {
+      field.modelValue = value
     })
 
     watch(() => field.modelValue, () => {
