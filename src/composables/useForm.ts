@@ -50,6 +50,14 @@ export default <T extends z.ZodType>(schema: T, {
     if (!exists)
       setObjectValueByPath(form, fieldPath.split('.'), defaultValue)
 
+    const existingField = registeredFields.get(fieldPath)
+
+    if (existingField != null) {
+      if (defaultValue != null)
+        console.warn(`[useForm] Field "${fieldPath}" has already been registered, but a default value was provided. This will be ignored.`)
+
+      return existingField
+    }
     const fieldErrors = computed(
       () => (errors as any)[fieldPath],
     )
