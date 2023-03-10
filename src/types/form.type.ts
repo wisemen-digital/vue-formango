@@ -4,33 +4,42 @@ import type { FieldPath, FieldPathValue } from './eager.type'
 
 type MaybePromise<T> = T | Promise<T>
 
+export interface Field<T> {
+  _path: string
+  modelValue: T
+  errors: z.ZodFormattedError<T>
+  isTouched: boolean
+  isDirty: boolean
+  isChanged: boolean
+  'onUpdate:modelValue': (value: T) => void
+  'setValue': (value: T) => void
+  onBlur: () => void
+  onChange: () => void
+}
+
 export type Register<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
   V extends FieldPathValue<z.infer<T>, P>,
->(field: P, defaultValue?: FieldPathValue<z.infer<T>, P>) => {
-  modelValue: V
-  errors: z.ZodFormattedError<V>
-  isTouched: boolean
-  isDirty: boolean
-  'onUpdate:modelValue': (value: V) => void
-  onBlur: () => void
-}
+>(field: P, defaultValue?: FieldPathValue<z.infer<T>, P>) => Field<V>
+
+export type Unregister<T extends z.ZodType> = <
+  P extends FieldPath<z.infer<T>>,
+>(field: P) => void
 
 export interface UseForm<T extends z.ZodType> {
-  state: z.infer<T>
+  errors: z.ZodFormattedError<z.infer<T>>
   isDirty: boolean
-  isValid: boolean
   isReady: boolean
   isSubmitting: boolean
-  errors: z.ZodFormattedError<z.infer<T>>
+  isValid: boolean
   register: Register<T>
-  setValues: (values: DeepPartial<z.infer<T>>) => void
   setErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
+  setValues: (values: DeepPartial<z.infer<T>>) => void
   submit: () => Promise<void>
-  prepare: () => Promise<void>
+  unregister: Unregister<T>
 }
 
 export interface Callbacks<T extends z.ZodType> {
-  onPrepare?: () => MaybePromise<z.infer<T> | null>
-  onSubmit: (data: z.infer<T>) => MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>> | null>
+  onPrepare?: () => MaybePromise<z.infer<T>> | void
+  onSubmit: (data: z.infer<T>) => MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>>> | void
 }
