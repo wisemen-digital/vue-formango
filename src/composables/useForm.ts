@@ -50,7 +50,7 @@ export default <T extends z.ZodType>(schema: T, {
   // * form.register('array.1')
   // ! form.unregister('array.0') --> array.1 is now array.0
   // * form.register('array.1') --> should work since array.1 -> array.0
-  const updatePaths = (path: string) => {
+  const updatePaths = (path: string): void => {
     const isArray = !Number.isNaN(path.split('.').pop())
 
     if (isArray) {
@@ -102,6 +102,7 @@ export default <T extends z.ZodType>(schema: T, {
       'isChanged': false,
       'modelValue': value,
       'onUpdate:modelValue': (value: unknown) => {
+        // If the value is an empty string, set it to null to make sure the field is not dirty
         const valueOrNull = value === '' ? null : value
         set(form, path.value, valueOrNull)
       },
@@ -157,7 +158,27 @@ export default <T extends z.ZodType>(schema: T, {
   }
 
   const setErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
-    Object.assign(errors.value, err)
+    const mergeErrors = (
+      existingErrors: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
+      err: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
+    ): void => {
+      for (const key in err) {
+        if (key === '_errors') {
+          existingErrors[key] = err[key]
+        }
+        else {
+          if (existingErrors[key] == null) {
+            existingErrors[key] = {
+              _errors: [],
+            } as any
+          }
+
+          mergeErrors(existingErrors[key] as any, err[key] as any)
+        }
+      }
+    }
+
+    mergeErrors(errors.value, err)
   }
 
   const prepare = async (): Promise<void> => {
