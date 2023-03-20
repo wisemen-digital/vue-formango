@@ -30,7 +30,7 @@ describe('useForm', () => {
       })
     })
 
-    it('should update the modelValue and be dirty', () => {
+    it('should update the modelValue and be dirty', async () => {
       const form = useForm(z.object({
         firstName: z.string().min(1),
       }), {
@@ -47,6 +47,10 @@ describe('useForm', () => {
       firstName.setValue('Baz')
 
       expect(firstName.modelValue).toBe('Baz')
+
+      await form.submit()
+
+      expect(firstName.isDirty).toBe(false)
     })
 
     it('should unregister an array index correctly', () => {
@@ -69,6 +73,25 @@ describe('useForm', () => {
       expect(tagBar._path).toBe('tags.0')
     })
 
+    // it('should unregister a nested array index correctly', () => {
+    //   const form = useForm(z.object({
+    //     tags: z.array(z.object({
+    //       users: z.array(z.string()),
+    //     })),
+    //   }), {
+    //     onSubmit: () => {},
+    //   })
+
+    //   form.register('tags.0.users.0', 'Foo')
+    //   const tagBar = form.register('tags.0.users.1', 'Bar')
+
+    //   expect(tagBar._path).toBe('tags.0.users.1')
+
+    //   form.unregister('tags.0.users.0')
+
+    //   expect(tagBar._path).toBe('tags.0.users.0')
+    // })
+
     it('should validate the form', () => {
       const form = useForm(z.object({
         firstName: z.string().min(1),
@@ -82,7 +105,7 @@ describe('useForm', () => {
         expect(form.isValid).toBe(true)
         expect(firstName.errors).toBeUndefined()
 
-        firstName['onUpdate:modelValue']('')
+        firstName.setValue('')
 
         expect(form.isValid).toBe(false)
         expect(firstName.errors).toBeDefined()
@@ -145,6 +168,9 @@ describe('useForm', () => {
     it('should set the form errors', () => {
       const form = useForm(z.object({
         firstName: z.string().min(1),
+        nested: z.object({
+          foo: z.string(),
+        }),
       }), {
         onSubmit: () => {},
       })
@@ -157,10 +183,33 @@ describe('useForm', () => {
         firstName: {
           _errors: ['Error'],
         },
+        nested: {
+          _errors: ['Error'],
+        },
       })
 
       expect(firstName.errors).toEqual({
         _errors: ['Error'],
+      })
+
+      form.setErrors({
+        nested: {
+          foo: {
+            _errors: ['Error'],
+          },
+        },
+      })
+
+      expect(form.errors).toEqual({
+        firstName: {
+          _errors: ['Error'],
+        },
+        nested: {
+          _errors: ['Error'],
+          foo: {
+            _errors: ['Error'],
+          },
+        },
       })
     })
 

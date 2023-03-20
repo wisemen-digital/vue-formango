@@ -126,8 +126,12 @@ export default <T extends z.ZodType>(schema: T, {
   const register: Register<T> = (path, defaultValue) => {
     const [existingFieldId] = [...paths.entries()].find(([, p]) => p === path) ?? [null]
 
-    if (existingFieldId !== null)
+    if (existingFieldId !== null) {
+      if (defaultValue != null)
+        console.warn(`Path ${path} is already registered, default value will be ignored`)
+
       return registeredFields.get(existingFieldId)!
+    }
 
     const id = generateId()
 
@@ -154,7 +158,14 @@ export default <T extends z.ZodType>(schema: T, {
   }
 
   const setValues = (values: DeepPartial<z.infer<T>>): void => {
-    Object.assign(form, values)
+    for (const key in values) {
+      const value = values[key]
+
+      if (typeof value === 'object')
+        setValues(value as any)
+      else
+        set(form, key, value)
+    }
   }
 
   const setErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {

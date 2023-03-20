@@ -115,13 +115,13 @@ export interface UseForm<T extends z.ZodType> {
    */
   unregister: Unregister<T>
   /**
-   * Sets the current errors of the form.
+   * Sets errors in the form.
    *
    * @param errors The new errors for the form fields.
    */
   setErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
   /**
-   * Sets the current values of the form fields.
+   * Sets values in the form.
    *
    * @param values The new values for the form fields.
    */
