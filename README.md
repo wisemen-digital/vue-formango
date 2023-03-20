@@ -22,10 +22,10 @@ const exampleForm = z.object({
 
 // Parse the schema to `useForm` along with a function to handle the submit.
 // Optionally, you can also pass a function to prepare the form.
-const form = useForm(loginForm, {
+const form = useForm(exampleForm, {
   // The form will not be considered dirty until this promise has been resolved.
   onPrepare: () => {
-    // TODO: E.g. Fetch data from an api
+    // Fetch initial form data from API
 
     return {
       name: 'Foo',
