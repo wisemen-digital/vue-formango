@@ -39,7 +39,7 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
+  "peerDependencies": {
     "zod": "^3.20.6"
   },
   "devDependencies": {

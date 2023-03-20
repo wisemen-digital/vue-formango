@@ -21,11 +21,11 @@ const exampleForm = z.object({
 })
 
 // Parse the schema to `useForm` along with a function to handle the submit.
-// Optionally, you can also pass a function to prepare the form
+// Optionally, you can also pass a function to prepare the form.
 const form = useForm(loginForm, {
+  // The form will not be considered dirty until this promise has been resolved.
   onPrepare: () => {
     // TODO: E.g. Fetch data from an api
-    // The dirty state will only start after this async function has been finished
 
     return {
       name: 'Foo',
@@ -43,7 +43,7 @@ const form = useForm(loginForm, {
 ## useForm()
 
 ```ts
-// Registers a new form field. You can optionally provide a default value
+// Registers a new form field. You can optionally provide a default value.
 form.register('firstName')
 form.register('firstName', 'Foo')
 form.register('foo.bar.0')
@@ -51,12 +51,12 @@ form.register('foo.bar.0')
 // Unregisters a previously registered field.
 form.unregister('firstName')
 
-// Set form values
+// Set form values.
 form.setValues({
   firstName: 'Foo'
 })
 
-// Set form errors
+// Set form errors.
 form.setErrors({
   firstName: {
     _errors: ['Custom error']
