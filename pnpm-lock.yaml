@@ -20,6 +20,9 @@ importers:
       vite: ^4.1.4
       vitest: ^0.28.5
       vue: ^3.2.47
+      zod: ^3.21.4
+    dependencies:
+      zod: registry.npmjs.org/zod/3.21.4
     devDependencies:
       '@antfu/eslint-config': 0.35.3_7kw3g6rralp5ps6mg3uyzz6azm
       '@antfu/ni': 0.20.0
@@ -4881,3 +4884,9 @@ packages:
       '@vue/server-renderer': registry.npmjs.org/@vue/server-renderer/3.2.47_vue@3.2.47
       '@vue/shared': registry.npmjs.org/@vue/shared/3.2.47
     dev: true
+
+  registry.npmjs.org/zod/3.21.4:
+    resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==, registry: https://registry.npmjs.com/, tarball: https://registry.npmjs.org/zod/-/zod-3.21.4.tgz}
+    name: zod
+    version: 3.21.4
+    dev: false
