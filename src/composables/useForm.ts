@@ -3,6 +3,7 @@ import { z } from 'zod'
 import {
   computed,
   reactive,
+  readonly,
   ref,
   watch,
 } from 'vue'
@@ -27,8 +28,7 @@ export default <T extends z.ZodType>(schema: T, {
   onPrepare,
   onSubmit,
 }: Callbacks<T>): UseForm<T> => {
-  const form = reactive<any>({})
-
+  const form = reactive<DeepPartial<z.infer<T>>>({} as any)
   const errors = ref<z.ZodFormattedError<T>>({} as any)
 
   const isValid = ref(false)
@@ -248,6 +248,7 @@ export default <T extends z.ZodType>(schema: T, {
   prepare()
 
   return reactive<any>({
+    state: readonly(form),
     errors,
     isDirty,
     isReady,

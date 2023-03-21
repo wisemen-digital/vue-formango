@@ -76,6 +76,10 @@ export type Unregister<T extends z.ZodType> = <
  */
 export interface UseForm<T extends z.ZodType> {
   /**
+   * The current state of the form.
+   */
+  _state: Readonly<DeepPartial<z.infer<T>>>
+  /**
    * The collection of all registered fields' errors.
    */
   errors: z.ZodFormattedError<z.infer<T>>
