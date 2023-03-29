@@ -224,7 +224,11 @@ describe('useForm', () => {
 
       expect(form.isSubmitting).toBe(false)
 
-      await form.submit()
+      const submit = form.submit()
+
+      expect(form.isSubmitting).toBe(true)
+
+      await submit
 
       setTimeout(() => {
         expect(form.isSubmitting).toBe(false)

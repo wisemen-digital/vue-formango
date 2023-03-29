@@ -31,7 +31,6 @@ export default <T extends z.ZodType>(schema: T, {
   const form = reactive<DeepPartial<z.infer<T>>>({} as any)
   const errors = ref<z.ZodFormattedError<T>>({} as any)
 
-  const isValid = ref(false)
   const isSubmitting = ref(false)
   const isReady = ref(onPrepare == null)
 
@@ -39,6 +38,10 @@ export default <T extends z.ZodType>(schema: T, {
 
   const isDirty = computed(() => {
     return JSON.stringify(form) !== JSON.stringify(initialState.value)
+  })
+
+  const isValid = computed(() => {
+    return Object.keys(errors.value).length === 0
   })
 
   const paths = reactive(new Map<string, string>())
@@ -232,13 +235,10 @@ export default <T extends z.ZodType>(schema: T, {
       await schema.parseAsync(form)
 
       errors.value = {}
-      isValid.value = true
     }
     catch (e) {
-      if (e instanceof z.ZodError) {
-        isValid.value = false
+      if (e instanceof z.ZodError)
         errors.value = e.format()
-      }
     }
   }, {
     deep: true,
@@ -248,7 +248,7 @@ export default <T extends z.ZodType>(schema: T, {
   prepare()
 
   return reactive<any>({
-    state: readonly(form),
+    _state: readonly(form),
     errors,
     isDirty,
     isReady,
