@@ -1,2 +1,2 @@
 export * from './composables'
-export type { UseForm } from './types'
+export type { UseForm, Field } from './types'

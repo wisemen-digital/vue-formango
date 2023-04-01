@@ -138,9 +138,18 @@ export interface UseForm<T extends z.ZodType> {
   submit: () => Promise<void>
 }
 
+/**
+ * Represents the options for creating a form.
+ */
 export interface Callbacks<T extends z.ZodType> {
+  /**
+   * The form is considered ready once this promise resolves.
+   */
   onPrepare?: () => MaybePromise<z.infer<T>> | MaybePromise<void>
-  onSubmit: (data: z.infer<T>) =>
-  MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>>>
+  /**
+   * Called when the form is valid and submitted.
+   * @param data The current form data.
+   */
+  onSubmit: (data: z.infer<T>) => MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>>>
   | MaybePromise<void>
 }
