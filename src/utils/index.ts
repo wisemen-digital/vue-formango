@@ -111,3 +111,5 @@ export const generateId = (): string => {
 
   return id
 }
+
+const x = <number>0

@@ -19,7 +19,9 @@ import type {
   Callbacks,
   DeepPartial,
   Field,
+  FieldArray,
   Register,
+  RegisterArray,
   Unregister,
   UseForm,
 } from '../types'
@@ -46,6 +48,7 @@ export default <T extends z.ZodType>(schema: T, {
 
   const paths = reactive(new Map<string, string>())
   const registeredFields = reactive(new Map<string, Field<any>>())
+  const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
 
   const getPathId = (path: string) => [...paths.entries()].find(([, p]) => p === path)?.[0]
 
@@ -62,19 +65,28 @@ export default <T extends z.ZodType>(schema: T, {
       const matchingPaths = [...paths.entries()].filter(([, p]) => p.startsWith(prefix))
 
       for (const [id, p] of matchingPaths) {
-        const i = parseInt(p.split('.').pop() ?? '0', 10)
+        // Skip if path doesn't have a number
+        // We don't want to delete the array itself
+        if (!/\d/.test(p))
+          continue
+
+        // Only keep number in string, there might be a string after the number
+        const i = +p.replace(/\D/g, '')
 
         if (i > index) {
           const newPath = p.replace(`.${i}`, `.${i - 1}`)
 
           paths.set(id, newPath)
         }
+        else if (i === index) {
+          paths.delete(id)
+        }
       }
     }
-
-    const id = getPathId(path)!
-
-    paths.delete(id)
+    else {
+      const id = getPathId(path)!
+      paths.delete(id)
+    }
   }
 
   const createField = (
@@ -84,6 +96,9 @@ export default <T extends z.ZodType>(schema: T, {
     const path = computed(() => paths.get(id)!)
 
     const value = computed(() => {
+      if (path.value == null)
+        return null
+
       return get(form, path.value)
     })
 
@@ -91,6 +106,12 @@ export default <T extends z.ZodType>(schema: T, {
       set(form, path.value, defaultValue ?? null)
 
     const fieldErrors = computed<z.ZodFormattedError<T>>(() => {
+      if (path.value == null) {
+        return {
+          _errors: [],
+        }
+      }
+
       return get(errors.value, path.value)
     })
 
@@ -99,14 +120,16 @@ export default <T extends z.ZodType>(schema: T, {
     }
 
     const field = reactive<Field<any>>({
-      '_path': path as any,
+      '_path': path.value as any,
+      '_id': id,
       'isDirty': false,
       'isTouched': false,
       'isChanged': false,
       'modelValue': value,
-      'onUpdate:modelValue': (value: unknown) => {
+      'onUpdate:modelValue': (value2: unknown) => {
         // If the value is an empty string, set it to null to make sure the field is not dirty
-        const valueOrNull = value === '' ? null : value
+        const valueOrNull = value2 === '' ? null : value2
+
         set(form, path.value, valueOrNull)
       },
       'errors': fieldErrors as any,
@@ -121,30 +144,98 @@ export default <T extends z.ZodType>(schema: T, {
       },
     })
 
-    field.isDirty = computed(() => isDirty(field.modelValue)) as any
+    field.isDirty = computed(() => {
+      if (path.value == null)
+        return false
+
+      return isDirty(field.modelValue)
+    }) as any
 
     return field
+  }
+
+  const createFieldArray = (id: string, path: string): FieldArray<any> => {
+    const value = computed(() => get(form, path))
+
+    if (value.value == null)
+      set(form, path, [])
+
+    const fields = reactive<string[]>([])
+
+    const fieldErrors = computed<z.ZodFormattedError<T>>(() => {
+      return get(errors.value, path)
+    })
+
+    const isDirty = computed(() => {
+      const initialValue = get(initialState.value, path)
+      return JSON.stringify(value.value) !== JSON.stringify(initialValue)
+    })
+
+    const insert = (index: number): void => {
+      fields[index] = generateId()
+    }
+
+    const remove = (index: number): void => {
+      fields.splice(index, 1)
+    }
+
+    const prepend = (): void => {
+      insert(0)
+    }
+
+    const append = (): void => {
+      insert(fields.length)
+    }
+
+    const pop = (): void => {
+      remove(fields.length - 1)
+    }
+
+    const shift = (): void => {
+      remove(0)
+    }
+
+    return reactive<any>({
+      _id: id,
+      _path: path,
+      append,
+      fields,
+      insert,
+      pop,
+      prepend,
+      remove,
+      shift,
+      errors: fieldErrors,
+      isDirty,
+    })
   }
 
   const register: Register<T> = (path, defaultValue) => {
     const [existingFieldId] = [...paths.entries()].find(([, p]) => p === path) ?? [null]
 
-    if (existingFieldId !== null) {
-      if (defaultValue != null)
-        console.warn(`Path ${path} is already registered, default value will be ignored`)
-
-      return registeredFields.get(existingFieldId)!
-    }
-
-    const id = generateId()
+    const id = existingFieldId ?? generateId()
 
     paths.set(id, path)
 
-    const field = createField(id, defaultValue)
+    const field = createField(id, existingFieldId == null ? defaultValue : undefined)
 
     registeredFields.set(id, field)
 
     return field
+  }
+
+  const registerArray: RegisterArray<T> = (path) => {
+    const [existingFieldArrayId] = [...paths.entries()].find(([, p]) => p === path) ?? [null]
+
+    const id = existingFieldArrayId ?? generateId()
+
+    paths.set(id, path)
+
+    const fieldArray = createFieldArray(id, path)
+
+    registeredFieldArrays.set(id, fieldArray)
+
+    return fieldArray
   }
 
   const unregister: Unregister<T> = (path) => {
@@ -255,6 +346,7 @@ export default <T extends z.ZodType>(schema: T, {
     isSubmitting,
     isValid,
     register,
+    registerArray,
     submit,
     unregister,
     setValues,

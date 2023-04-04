@@ -15,6 +15,10 @@ export interface Field<T> {
    */
   _path: string
   /**
+   * The unique id of the field.
+   */
+  _id: string
+  /**
    * The current value of the field.
    */
   modelValue: T
@@ -60,10 +64,65 @@ export interface Field<T> {
   onChange: () => void
 }
 
+export interface FieldArray<T> {
+  /**
+   * The current path of the field. This can change if fields are unregistered.
+   */
+  _path: string
+  /**
+   * The unique id of the field.
+   */
+  _id: string
+  /**
+   * Array of unique ids of the fields.
+   */
+  fields: string[]
+  /**
+   * The errors associated with the field and its children.
+   */
+  errors: z.ZodFormattedError<T>
+  /**
+   * Indicates whether the field value is different from its initial value.
+   */
+  isDirty: boolean
+  /**
+   * Insert a new field at the given index.
+   * @param index The index of the field to insert.
+   */
+  insert: (index: number) => void
+  /**
+   * Remove a field at the given index.
+   * @param index The index of the field to remove.
+   */
+  remove: (index: number) => void
+  /**
+   * Add a new field at the beginning of the array.
+   */
+  prepend: () => void
+  /**
+   * Add a new field at the end of the array.
+   */
+  append: () => void
+  /**
+   * Remove the last field of the array.
+   */
+  pop: () => void
+
+  /**
+   * Remove the first field of the array.
+   */
+  shift: () => void
+}
+
 export type Register<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
   V extends FieldPathValue<z.infer<T>, P>,
 >(field: P, defaultValue?: FieldPathValue<z.infer<T>, P>) => Field<V>
+
+export type RegisterArray<T extends z.ZodType> = <
+  P extends FieldPath<z.infer<T>>,
+  V extends FieldPathValue<z.infer<T>, P>,
+>(field: P) => FieldArray<V>
 
 export type Unregister<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
@@ -112,6 +171,12 @@ export interface UseForm<T extends z.ZodType> {
    * @returns A `Field` instance that can be used to interact with the field.
    */
   register: Register<T>
+  /**
+   * Registers a new form field array.
+   *
+   * @returns A `FieldArray` instance that can be used to interact with the field array.
+   */
+  registerArray: RegisterArray<T>
   /**
    * Unregisters a previously registered field.
    *

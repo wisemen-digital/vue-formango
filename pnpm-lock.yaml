@@ -7,6 +7,7 @@ importers:
       '@antfu/eslint-config': ^0.35.3
       '@antfu/ni': ^0.20.0
       '@antfu/utils': ^0.7.2
+      '@appwise/forms': workspace:^0.0.11
       '@types/node': ^18.14.1
       bumpp: ^9.0.0
       eslint: ^8.34.0
@@ -22,6 +23,7 @@ importers:
       vue: ^3.2.47
       zod: ^3.21.4
     dependencies:
+      '@appwise/forms': 'link:'
       zod: registry.npmjs.org/zod/3.21.4
     devDependencies:
       '@antfu/eslint-config': 0.35.3_7kw3g6rralp5ps6mg3uyzz6azm
