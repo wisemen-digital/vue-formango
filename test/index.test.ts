@@ -73,25 +73,6 @@ describe('useForm', () => {
       expect(tagBar._path).toBe('tags.0')
     })
 
-    // it('should unregister a nested array index correctly', () => {
-    //   const form = useForm(z.object({
-    //     tags: z.array(z.object({
-    //       users: z.array(z.string()),
-    //     })),
-    //   }), {
-    //     onSubmit: () => {},
-    //   })
-
-    //   form.register('tags.0.users.0', 'Foo')
-    //   const tagBar = form.register('tags.0.users.1', 'Bar')
-
-    //   expect(tagBar._path).toBe('tags.0.users.1')
-
-    //   form.unregister('tags.0.users.0')
-
-    //   expect(tagBar._path).toBe('tags.0.users.0')
-    // })
-
     it('should validate the form', () => {
       const form = useForm(z.object({
         firstName: z.string().min(1),

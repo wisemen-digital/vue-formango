@@ -24,7 +24,7 @@ const exampleForm = z.object({
 // Optionally, you can also pass a function to prepare the form.
 const form = useForm(exampleForm, {
   // The form will not be considered dirty until this promise has been resolved.
-  onPrepare: () => {
+  initialise: () => {
     // Fetch initial form data from API
 
     return {
@@ -73,8 +73,8 @@ form.errors
 form.isDirty
 
 // Indicates whether the form is ready or not.
-// Will be `true` once onPrepare has been called.
-// If `onPrepare` was not provided, the form will immediately be ready.
+// Will be `true` once initialise has been called.
+// If `initialise` was not provided, the form will immediately be ready.
 form.isReady
 
 // Indicates whether the form is currently submitting or not.

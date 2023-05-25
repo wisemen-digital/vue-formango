@@ -80,16 +80,23 @@ export const get = <T>(obj: T, path: string, defaultValue?: unknown): any => {
 export const unset = (object: any, path: string) => {
   const arrayPath = path.split('.')
 
-  const childObject = arrayPath.length === 1 ? object : baseGet(object, arrayPath)
+  const childObject = arrayPath.length === 1
+    ? object
+    : baseGet(object, arrayPath)
 
   const index = arrayPath.length - 1
   const key = arrayPath[index]
 
   if (childObject) {
-    if (Array.isArray(childObject))
+    if (Array.isArray(childObject)) {
       childObject.splice(+key, 1)
-    else if (isObject(childObject))
-      delete childObject[key]
+    }
+    else if (isObject(childObject)) {
+      const value = childObject[key]
+
+      if (!Array.isArray(value))
+        delete childObject[key]
+    }
   }
 
   if (

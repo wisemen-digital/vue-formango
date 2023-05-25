@@ -2,7 +2,7 @@ import type { z } from 'zod'
 import type { DeepPartial } from './utils.type'
 import type { FieldPath, FieldPathValue } from './eager.type'
 
-type MaybePromise<T> = T | Promise<T>
+export type MaybePromise<T> = T | Promise<T>
 
 /**
  * Represents a form field.
@@ -13,7 +13,7 @@ export interface Field<T> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: string | null
   /**
    * The unique id of the field.
    */
@@ -25,7 +25,7 @@ export interface Field<T> {
   /**
    * The errors associated with the field and its children.
    */
-  errors: z.ZodFormattedError<T>
+  errors: z.ZodFormattedError<T> | undefined
   /**
    * Indicates whether the field has been touched (blurred).
    */
@@ -64,6 +64,11 @@ export interface Field<T> {
   onChange: () => void
 }
 
+/**
+ * Represents a form field array.
+ *
+ * @typeparam T The type of the form schema.
+ */
 export interface FieldArray<T> {
   /**
    * The current path of the field. This can change if fields are unregistered.
@@ -74,13 +79,17 @@ export interface FieldArray<T> {
    */
   _id: string
   /**
+   * The current value of the field.
+   */
+  modelValue: T
+  /**
    * Array of unique ids of the fields.
    */
   fields: string[]
   /**
    * The errors associated with the field and its children.
    */
-  errors: z.ZodFormattedError<T>
+  errors: z.ZodFormattedError<T> | undefined
   /**
    * Indicates whether the field value is different from its initial value.
    */
@@ -107,11 +116,18 @@ export interface FieldArray<T> {
    * Remove the last field of the array.
    */
   pop: () => void
-
   /**
    * Remove the first field of the array.
    */
   shift: () => void
+  /**
+   * Move a field from one index to another.
+   */
+  move: (from: number, to: number) => void
+  /**
+   * Set the current value of the field.
+   */
+  setValue: (value: T) => void
 }
 
 export type Register<T extends z.ZodType> = <
@@ -128,12 +144,7 @@ export type Unregister<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
 >(field: P) => void
 
-/**
- * Represents a form instance.
- *
- * @typeparam T The type of the form schema.
- */
-export interface UseForm<T extends z.ZodType> {
+export interface Form<T extends z.ZodType> {
   /**
    * The current state of the form.
    */
@@ -151,8 +162,8 @@ export interface UseForm<T extends z.ZodType> {
   /**
    * Indicates whether the form is ready or not.
    *
-   * If the `onPrepare` option is provided when creating the form, the form will be considered ready
-   * once the promise returned by `onPrepare` resolves.
+   * If the `initialise` option is provided when creating the form, the form will be considered ready
+   * once the promise returned by `initialise` resolves.
    */
   isReady: boolean
   /**
@@ -204,17 +215,24 @@ export interface UseForm<T extends z.ZodType> {
 }
 
 /**
- * Represents the options for creating a form.
+ * Represents a form instance.
+ *
+ * @typeparam T The type of the form schema.
  */
-export interface Callbacks<T extends z.ZodType> {
+export interface UseForm<T extends z.ZodType> {
   /**
    * The form is considered ready once this promise resolves.
    */
-  onPrepare?: () => MaybePromise<z.infer<T>> | MaybePromise<void>
+  // onInitForm: (cb: () => MaybePromise<Partial<z.infer<T> > | null>) => void
+
   /**
    * Called when the form is valid and submitted.
    * @param data The current form data.
    */
-  onSubmit: (data: z.infer<T>) => MaybePromise<DeepPartial<z.ZodFormattedError<z.infer<T>>>>
-  | MaybePromise<void>
+  onSubmitForm: (cb: (data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) => void
+
+  /**
+   * The actual form instance.
+   */
+  form: Form<T>
 }
