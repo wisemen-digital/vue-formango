@@ -34,13 +34,13 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
   const isSubmitting = ref(false)
   const isReady = ref(true)
+  const hasAttemptedToSubmit = ref(false)
 
-  const initialState = ref<any>(initialData ?? null)
+  const initialState = ref<any>(initialData ? JSON.parse(JSON.stringify(initialData)) : null)
 
   if (initialData != null)
     Object.assign(form, initialData)
 
-  // let onInitCb: (() => MaybePromise<z.infer<T> | null>) | null = null
   let onSubmitCb: ((data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) | null = null
 
   const isDirty = computed(() => {
@@ -151,8 +151,10 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       fields.push(fieldId)
     }
 
-    const insert = (index: number): void => {
+    const insert = (index: number, value: unknown): void => {
       fields[index] = generateId()
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      register(`${path}.${index}` as Path<T>, value as any)
     }
 
     const remove = (index: number): void => {
@@ -163,12 +165,12 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       unregister(`${currentPath}.${index}` as Path<T>)
     }
 
-    const prepend = (): void => {
-      insert(0)
+    const prepend = (value: unknown): void => {
+      insert(0, value)
     }
 
-    const append = (): void => {
-      insert(fields.length)
+    const append = (value: unknown): void => {
+      insert(fields.length, value)
     }
 
     const pop = (): void => {
@@ -213,8 +215,16 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       paths.set(toId, fromPath)
     }
 
+    const empty = (): void => {
+      for (let i = fields.length - 1; i >= 0; i--)
+        remove(i)
+    }
+
     const setValue = (value: unknown): void => {
-      set(form, paths.get(id) as string, value)
+      empty()
+
+      for (const arrayValue of value as unknown[])
+        append(arrayValue)
     }
 
     const fieldArray = reactive<FieldArray<any>>({
@@ -231,6 +241,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       remove,
       shift,
       move,
+      empty,
       setValue,
     })
 
@@ -352,14 +363,8 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   }
 
   const setValues = (values: DeepPartial<z.infer<T>>): void => {
-    for (const key in values) {
-      const value = values[key]
-
-      if (typeof value === 'object')
-        setValues(value as any)
-      else
-        set(form, key, value)
-    }
+    for (const path in values)
+      set(form, path, values[path])
   }
 
   const setErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
@@ -392,6 +397,8 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   }
 
   const submit = async (): Promise<void> => {
+    hasAttemptedToSubmit.value = true
+
     blurAll()
 
     if (!isValid.value)
@@ -443,6 +450,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       isDirty,
       isReady,
       isSubmitting,
+      hasAttemptedToSubmit,
       isValid,
       register,
       registerArray,

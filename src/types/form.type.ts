@@ -4,6 +4,9 @@ import type { FieldPath, FieldPathValue } from './eager.type'
 
 export type MaybePromise<T> = T | Promise<T>
 
+type ArrayElement<ArrayType extends any[]> =
+  ArrayType extends readonly (infer ElementType)[] ? ElementType : never
+
 /**
  * Represents a form field.
  *
@@ -69,7 +72,7 @@ export interface Field<T> {
  *
  * @typeparam T The type of the form schema.
  */
-export interface FieldArray<T> {
+export interface FieldArray<T extends any[]> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
@@ -98,7 +101,7 @@ export interface FieldArray<T> {
    * Insert a new field at the given index.
    * @param index The index of the field to insert.
    */
-  insert: (index: number) => void
+  insert: (index: number, value?: ArrayElement<T>) => void
   /**
    * Remove a field at the given index.
    * @param index The index of the field to remove.
@@ -107,11 +110,11 @@ export interface FieldArray<T> {
   /**
    * Add a new field at the beginning of the array.
    */
-  prepend: () => void
+  prepend: (value?: ArrayElement<T>) => void
   /**
    * Add a new field at the end of the array.
    */
-  append: () => void
+  append: (value?: ArrayElement<T>) => void
   /**
    * Remove the last field of the array.
    */
@@ -124,6 +127,10 @@ export interface FieldArray<T> {
    * Move a field from one index to another.
    */
   move: (from: number, to: number) => void
+  /**
+   * Empty the array.
+   */
+  empty: () => void
   /**
    * Set the current value of the field.
    */
@@ -170,6 +177,10 @@ export interface Form<T extends z.ZodType> {
    * Indicates whether the form is currently submitting or not.
    */
   isSubmitting: boolean
+  /**
+   * Indicates whether the form has been attempted to submit.
+   */
+  hasAttemptedToSubmit: boolean
   /**
    * Indicates whether the form is currently valid or not.
    *
