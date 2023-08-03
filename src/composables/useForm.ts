@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { ComputedRef } from 'vue'
 import {
   computed,
+  getCurrentInstance,
   reactive,
   readonly,
   ref,
@@ -27,7 +28,7 @@ import type {
   Unregister,
   UseForm,
 } from '../types'
-import { registerFieldWithDevTools, registerFormWithDevTools } from '../devtools/devtools'
+import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
 export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>): UseForm<T> => {
   const form = reactive<DeepPartial<z.infer<T>>>({} as any)
@@ -370,6 +371,9 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     updatePaths(path)
     unset(form, path)
 
+    if (process.env.NODE_ENV === 'development')
+      unregisterFieldWithDevTools(registeredFields.get(id)!)
+
     registeredFields.delete(id)
     trackedDepencies.delete(id)
     paths.delete(id)
@@ -469,7 +473,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   })
 
   if (process.env.NODE_ENV === 'development')
-    registerFormWithDevTools(returnObject)
+    registerFormWithDevTools(returnObject, getCurrentInstance()?.type.__name)
 
   return {
     onSubmitForm,
