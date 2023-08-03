@@ -7,8 +7,7 @@ import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
 import { computed, getCurrentInstance, nextTick, onUnmounted, ref, watch } from 'vue'
-import type { Field } from '../../dist'
-import type { Form } from '../types'
+import type { Field, Form } from '../types'
 import type { EncodedNode } from '../types/devtools.type'
 import { throttle } from '../utils'
 import { buildFieldState, buildFormState } from './devtoolsBuilders'
@@ -16,7 +15,7 @@ import { buildFieldState, buildFormState } from './devtoolsBuilders'
 let API: DevtoolsPluginApi<Record<string, any>> | undefined
 const INSPECTOR_ID = 'appwise-forms-inspector'
 const DEVTOOLS_FORMS = ref<Record<string, Form<any>>>({})
-const DEVTOOLS_FIELDS = ref<Record<string, { formId: string; field: Field<any> }>>({})
+const DEVTOOLS_FIELDS = ref<Record<string, { formId: string; field: Field<any, any> }>>({})
 
 const COLORS = {
   error: 0xBD4B4B,
@@ -30,13 +29,11 @@ const COLORS = {
   gray: 0xBBBFCA,
 }
 
-export const refreshInspector = throttle(() => {
-  setTimeout(async () => {
-    await nextTick()
-    API?.sendInspectorState(INSPECTOR_ID)
-    API?.sendInspectorTree(INSPECTOR_ID)
-  }, 100)
-}, 100)
+export const refreshInspector = async (): Promise<void> => {
+  await nextTick()
+  API?.sendInspectorState(INSPECTOR_ID)
+  API?.sendInspectorTree(INSPECTOR_ID)
+}
 
 function installDevtoolsPlugin(app: App) {
   if (process.env.NODE_ENV === 'development') {
@@ -122,8 +119,11 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
     else if (decodedNode?.type === 'field' && decodedNode?.field?.field)
       payload.state = buildFieldState(decodedNode?.field.field)
   })
+
   watch(() => [DEVTOOLS_FORMS.value, DEVTOOLS_FIELDS.value], () => {
-    refreshInspector()
+    throttle(() => {
+      refreshInspector()
+    }, 300)
   }, { deep: true })
 }
 
@@ -146,7 +146,7 @@ export function registerFormWithDevTools(form: Form<any>) {
   refreshInspector()
 }
 
-export function registerFieldWithDevTools(formId: string, field: Field<any>) {
+export function registerFieldWithDevTools(formId: string, field: Field<any, any>) {
   const vm = getCurrentInstance()
   if (!API) {
     const app = vm?.appContext.app
@@ -175,7 +175,7 @@ interface FieldNode {
   type: 'field'
   field: {
     formId: string
-    field: Field<any>
+    field: Field<any, any>
   }
 }
 

@@ -29,7 +29,7 @@ import type {
 } from '../types'
 import { registerFieldWithDevTools, registerFormWithDevTools } from '../devtools/devtools'
 
-export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>, debugMode = false): UseForm<T> => {
+export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>): UseForm<T> => {
   const form = reactive<DeepPartial<z.infer<T>>>({} as any)
   const errors = ref<z.ZodFormattedError<T>>({} as any)
   const _id = generateId()
@@ -40,7 +40,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   const initialState = ref<any>(initialData ? JSON.parse(JSON.stringify(initialData)) : null)
 
   if (initialData != null)
-    Object.assign(form, initialData)
+    Object.assign(form, JSON.parse(JSON.stringify(initialData)))
 
   let onSubmitCb: ((data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) | null = null
 
