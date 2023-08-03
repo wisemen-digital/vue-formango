@@ -27,10 +27,12 @@ import type {
   Unregister,
   UseForm,
 } from '../types'
+import { registerFieldWithDevTools, registerFormWithDevTools } from '../devtools/devtools'
 
 export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>): UseForm<T> => {
   const form = reactive<DeepPartial<z.infer<T>>>({} as any)
   const errors = ref<z.ZodFormattedError<T>>({} as any)
+  const _id = generateId()
 
   const isSubmitting = ref(false)
   const isReady = ref(true)
@@ -317,6 +319,8 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       }
     }
 
+    if (process.env.NODE_ENV === 'development')
+      registerFieldWithDevTools(_id, field)
     return field
   }
 
@@ -441,23 +445,29 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
   // initialiseForm()
 
+  const returnObject = reactive<any>({
+    _id,
+    _state: readonly(form),
+    errors,
+    isDirty,
+    isReady,
+    isSubmitting,
+    hasAttemptedToSubmit,
+    isValid,
+    register,
+    registerArray,
+    submit,
+    unregister,
+    setValues,
+    setErrors,
+  })
+
+  if (process.env.NODE_ENV === 'development')
+    registerFormWithDevTools(returnObject)
+
   return {
     // onInitForm,
     onSubmitForm,
-    form: reactive<any>({
-      _state: readonly(form),
-      errors,
-      isDirty,
-      isReady,
-      isSubmitting,
-      hasAttemptedToSubmit,
-      isValid,
-      register,
-      registerArray,
-      submit,
-      unregister,
-      setValues,
-      setErrors,
-    }),
+    form: returnObject,
   }
 }
