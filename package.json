@@ -1,7 +1,7 @@
 {
   "name": "@appwise/forms",
   "type": "module",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "packageManager": "pnpm@7.12.0",
   "description": "",
   "author": "Wouter Laermans <wouter.laermans@appwise.be>",
