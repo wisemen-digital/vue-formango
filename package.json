@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@vue/devtools-api": "^6.5.0",
+    "@vueuse/core": "^10.3.0",
     "zod": "^3.21.4"
   },
   "devDependencies": {
