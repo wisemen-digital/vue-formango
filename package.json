@@ -29,6 +29,7 @@
     "zod": "^3.21.4"
   },
   "dependencies": {
+    "@vue/devtools-api": "^6.5.0",
     "zod": "^3.21.4"
   },
   "devDependencies": {

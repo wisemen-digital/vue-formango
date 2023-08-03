@@ -153,6 +153,11 @@ export type Unregister<T extends z.ZodType> = <
 
 export interface Form<T extends z.ZodType> {
   /**
+   * Internal id of the form, to track it in the devtools.
+   */
+  _id: string
+
+  /**
    * The current state of the form.
    */
   _state: Readonly<DeepPartial<z.infer<T>>>

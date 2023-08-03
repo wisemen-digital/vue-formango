@@ -120,3 +120,33 @@ export const generateId = (): string => {
 }
 
 const x = <number>0
+
+export const generateUuid = (): string => {
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | x
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+  return uuid
+}
+
+type ThrottledFunction<T extends (...args: any) => any> = (...args: Parameters<T>) => ReturnType<T>
+export function throttle<T extends (...args: any) => any>(func: T, limit: number): ThrottledFunction<T> {
+  let inThrottle: boolean
+  let lastResult: ReturnType<T>
+
+  return function (this: any, ...args: any[]): ReturnType<T> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const context = this
+
+    if (!inThrottle) {
+      inThrottle = true
+
+      setTimeout(() => (inThrottle = false), limit)
+
+      lastResult = func.apply(context, args)
+    }
+
+    return lastResult
+  }
+}
