@@ -20,10 +20,6 @@ export function buildFormState(form: Form<any>) {
         value: form.hasAttemptedToSubmit,
       },
       {
-        key: 'isReady',
-        value: form.isReady,
-      },
-      {
         key: 'isSubmitting',
         value: form.isSubmitting,
       },
@@ -35,7 +31,7 @@ export function buildFormState(form: Form<any>) {
   }
 }
 
-export function buildFieldState(field: Field<any>) {
+export function buildFieldState(field: Field<any, any>) {
   return {
     'Field state': [
       {

@@ -6,9 +6,9 @@ import type {
 import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
-import { computed, getCurrentInstance, nextTick, onUnmounted, ref, watch } from 'vue'
-import type { Field } from '../../dist'
-import type { Form } from '../types'
+import { getCurrentInstance, nextTick, onUnmounted, ref } from 'vue'
+import { watchDebounced } from '@vueuse/core'
+import type { Field, Form } from '../types'
 import type { EncodedNode } from '../types/devtools.type'
 import { throttle } from '../utils'
 import { buildFieldState, buildFormState } from './devtoolsBuilders'
@@ -16,7 +16,7 @@ import { buildFieldState, buildFormState } from './devtoolsBuilders'
 let API: DevtoolsPluginApi<Record<string, any>> | undefined
 const INSPECTOR_ID = 'appwise-forms-inspector'
 const DEVTOOLS_FORMS = ref<Record<string, Form<any>>>({})
-const DEVTOOLS_FIELDS = ref<Record<string, { formId: string; field: Field<any> }>>({})
+const DEVTOOLS_FIELDS = ref<Record<string, { formId: string; field: Field<any, any> }>>({})
 
 const COLORS = {
   error: 0xBD4B4B,
@@ -30,31 +30,7 @@ const COLORS = {
   gray: 0xBBBFCA,
 }
 
-export const refreshInspector = throttle(() => {
-  setTimeout(async () => {
-    await nextTick()
-    API?.sendInspectorState(INSPECTOR_ID)
-    API?.sendInspectorTree(INSPECTOR_ID)
-  }, 100)
-}, 100)
-
-function installDevtoolsPlugin(app: App) {
-  if (process.env.NODE_ENV === 'development') {
-    setupDevtoolsPlugin(
-      {
-        id: 'appwise-forms-devtools-plugin',
-        label: 'Appwise Forms Plugin',
-        packageName: '@appwise/forms',
-        homepage: 'https://github.com/wouterlms/forms',
-        app,
-        logo: 'https://ca.slack-edge.com/T060KMU2G-U01EJUUGLN9-b30972b08900-512',
-      },
-      setupApiHooks,
-    )
-  }
-}
-
-const formNodes = computed<CustomInspectorNode[]>(() => {
+const calculateNodes = (): CustomInspectorNode[] => {
   let counter = 0
   return Object.keys(DEVTOOLS_FORMS.value).map((formId: string) => {
     const form = DEVTOOLS_FORMS.value[formId]
@@ -76,15 +52,15 @@ const formNodes = computed<CustomInspectorNode[]>(() => {
       ],
       children: formFields.map((fieldId: string) => {
         const field = DEVTOOLS_FIELDS.value[fieldId]
-        const errorsAmount = field.field.errors?._errors.length
+        const hasErrors = field.field.errors && Object.values(field.field.errors).length > 0
         const errorTag = {
-          label: `${errorsAmount} errors`,
+          label: 'Has error',
           textColor: COLORS.white,
           backgroundColor: COLORS.error,
         }
 
         const tags = []
-        if (errorsAmount && errorsAmount > 0)
+        if (hasErrors)
           tags.push(errorTag)
 
         return {
@@ -95,7 +71,32 @@ const formNodes = computed<CustomInspectorNode[]>(() => {
       }),
     }
   })
-})
+}
+
+export const refreshInspector = throttle(() => {
+  setTimeout(async () => {
+    await nextTick()
+
+    API?.sendInspectorState(INSPECTOR_ID)
+    API?.sendInspectorTree(INSPECTOR_ID)
+  }, 100)
+}, 100)
+
+function installDevtoolsPlugin(app: App) {
+  if (process.env.NODE_ENV === 'development') {
+    setupDevtoolsPlugin(
+      {
+        id: 'appwise-forms-devtools-plugin',
+        label: 'Appwise Forms Plugin',
+        packageName: '@appwise/forms',
+        homepage: 'https://github.com/wouterlms/forms',
+        app,
+        logo: 'https://ca.slack-edge.com/T060KMU2G-U01EJUUGLN9-b30972b08900-512',
+      },
+      setupApiHooks,
+    )
+  }
+}
 
 function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
   API = api
@@ -108,9 +109,10 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
   })
 
   api.on.getInspectorTree((payload) => {
-    if (payload.inspectorId !== INSPECTOR_ID || formNodes.value?.length === 0)
+    if (payload.inspectorId !== INSPECTOR_ID)
       return
-    payload.rootNodes = formNodes.value
+    const calculatedNodes = calculateNodes()
+    payload.rootNodes = calculatedNodes
   })
 
   api.on.getInspectorState((payload, ctx) => {
@@ -122,9 +124,9 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
     else if (decodedNode?.type === 'field' && decodedNode?.field?.field)
       payload.state = buildFieldState(decodedNode?.field.field)
   })
-  watch(() => [DEVTOOLS_FORMS.value, DEVTOOLS_FIELDS.value], () => {
+  watchDebounced(() => [DEVTOOLS_FORMS.value], () => {
     refreshInspector()
-  }, { deep: true })
+  }, { deep: true, debounce: 500 })
 }
 
 export function registerFormWithDevTools(form: Form<any>) {
@@ -140,13 +142,20 @@ export function registerFormWithDevTools(form: Form<any>) {
   const encodedForm = encodeNodeId({ type: 'form', id: form._id })
   DEVTOOLS_FORMS.value[encodedForm] = form
   onUnmounted(() => {
+    const formFields = Object.keys(DEVTOOLS_FIELDS.value).filter((fieldId: string) => {
+      const field = DEVTOOLS_FIELDS.value[fieldId]
+      return field.formId === form?._id
+    })
     delete DEVTOOLS_FORMS.value[encodedForm]
+    formFields.forEach((formFieldId: string) => {
+      delete DEVTOOLS_FIELDS.value[formFieldId]
+    })
     refreshInspector()
   })
   refreshInspector()
 }
 
-export function registerFieldWithDevTools(formId: string, field: Field<any>) {
+export function registerFieldWithDevTools(formId: string, field: Field<any, any>) {
   const vm = getCurrentInstance()
   if (!API) {
     const app = vm?.appContext.app
@@ -175,7 +184,7 @@ interface FieldNode {
   type: 'field'
   field: {
     formId: string
-    field: Field<any>
+    field: Field<any, any>
   }
 }
 
