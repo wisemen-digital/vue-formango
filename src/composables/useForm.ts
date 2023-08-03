@@ -29,13 +29,12 @@ import type {
 } from '../types'
 import { registerFieldWithDevTools, registerFormWithDevTools } from '../devtools/devtools'
 
-export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>): UseForm<T> => {
+export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>, debugMode = false): UseForm<T> => {
   const form = reactive<DeepPartial<z.infer<T>>>({} as any)
   const errors = ref<z.ZodFormattedError<T>>({} as any)
   const _id = generateId()
 
   const isSubmitting = ref(false)
-  const isReady = ref(true)
   const hasAttemptedToSubmit = ref(false)
 
   const initialState = ref<any>(initialData ? JSON.parse(JSON.stringify(initialData)) : null)
@@ -55,10 +54,18 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
   const paths = reactive(new Map<string, string>())
   const trackedDepencies = reactive(new Map<string, ComputedRef<any>>())
-  const registeredFields = reactive(new Map<string, Field<any>>())
+  const registeredFields = reactive(new Map<string, Field<any, any>>())
   const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
 
-  const getPathId = (path: string): string | null => [...paths.entries()].find(([, p]) => p === path)?.[0] ?? null
+  // const debug = (message: string): void => {
+  //   if (debugMode)
+  //     // eslint-disable-next-line no-console
+  //     console.log(message)
+  // }
+
+  const getPathId = (
+    path: string,
+  ): string | null => [...paths.entries()].find(([, p]) => p === path)?.[0] ?? null
 
   // * form.register('array.0')
   // * form.register('array.1')
@@ -100,14 +107,14 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     }
   }
 
-  const createField = <T>(id: string, defaultValue: T | null = null): Field<any> => {
+  const createField = <T, K = T | null>(id: string, defaultValue: K = null as K): Field<any, any> => {
     const path = paths.get(id) as string
     const value = get(form, path)
 
     if (value == null)
       set(form, path, defaultValue)
 
-    const field = reactive<Field<any>>({
+    const field = reactive<Field<any, any>>({
       '_id': id,
       '_path': path,
       'isDirty': false,
@@ -250,7 +257,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     return fieldArray
   }
 
-  const trackFieldDepencies = (field: Field<any> | FieldArray<any>): void => {
+  const trackFieldDepencies = (field: Field<any, any> | FieldArray<any>): void => {
     field._path = computed<string | null>(() => paths.get(field._id) ?? null) as any
 
     const value = computed(() => {
@@ -443,14 +450,11 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     immediate: true,
   })
 
-  // initialiseForm()
-
   const returnObject = reactive<any>({
     _id,
     _state: readonly(form),
     errors,
     isDirty,
-    isReady,
     isSubmitting,
     hasAttemptedToSubmit,
     isValid,
@@ -466,7 +470,6 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     registerFormWithDevTools(returnObject)
 
   return {
-    // onInitForm,
     onSubmitForm,
     form: returnObject,
   }

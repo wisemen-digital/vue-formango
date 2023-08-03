@@ -12,7 +12,7 @@ type ArrayElement<ArrayType extends any[]> =
  *
  * @typeparam T The type of the field value.
  */
-export interface Field<T> {
+export interface Field<T, K> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
@@ -24,7 +24,7 @@ export interface Field<T> {
   /**
    * The current value of the field.
    */
-  modelValue: T
+  modelValue: K extends undefined ? T | null : T
   /**
    * The errors associated with the field and its children.
    */
@@ -56,7 +56,7 @@ export interface Field<T> {
    *
    * @param value The new value of the field.
    */
-  'setValue': (value: T) => void
+  'setValue': (value: K extends undefined ? T | null : T) => void
   /**
    * Called when the field input is blurred.
    */
@@ -140,7 +140,8 @@ export interface FieldArray<T extends any[]> {
 export type Register<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
   V extends FieldPathValue<z.infer<T>, P>,
->(field: P, defaultValue?: FieldPathValue<z.infer<T>, P>) => Field<V>
+  K extends FieldPathValue<z.infer<T>, P> | undefined,
+>(field: P, defaultValue?: K) => Field<V, K>
 
 export type RegisterArray<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
@@ -171,13 +172,6 @@ export interface Form<T extends z.ZodType> {
    * A form is considered dirty if any of its fields have been changed.
    */
   isDirty: boolean
-  /**
-   * Indicates whether the form is ready or not.
-   *
-   * If the `initialise` option is provided when creating the form, the form will be considered ready
-   * once the promise returned by `initialise` resolves.
-   */
-  isReady: boolean
   /**
    * Indicates whether the form is currently submitting or not.
    */
@@ -236,11 +230,6 @@ export interface Form<T extends z.ZodType> {
  * @typeparam T The type of the form schema.
  */
 export interface UseForm<T extends z.ZodType> {
-  /**
-   * The form is considered ready once this promise resolves.
-   */
-  // onInitForm: (cb: () => MaybePromise<Partial<z.infer<T> > | null>) => void
-
   /**
    * Called when the form is valid and submitted.
    * @param data The current form data.
