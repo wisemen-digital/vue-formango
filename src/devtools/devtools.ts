@@ -7,7 +7,6 @@ import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
 import { getCurrentInstance, nextTick, onUnmounted, ref } from 'vue'
-import { watchDebounced } from '@vueuse/core'
 import type { Field, Form } from '../types'
 import type { EncodedNode } from '../types/devtools.type'
 import { throttle } from '../utils'
@@ -82,6 +81,19 @@ export const refreshInspector = throttle(() => {
   }, 100)
 }, 100)
 
+let interval: ReturnType<typeof setInterval> | null = null
+const removeRefreshInterval = () => {
+  if (interval)
+    clearInterval(interval)
+  interval = null
+}
+const setRefreshInterval = () => {
+  removeRefreshInterval()
+  interval = setInterval(() => {
+    refreshInspector()
+  }, 1500)
+}
+
 function installDevtoolsPlugin(app: App) {
   if (process.env.NODE_ENV === 'development') {
     setupDevtoolsPlugin(
@@ -108,25 +120,35 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
     noSelectionText: 'Select a form node to inspect',
   })
 
-  api.on.getInspectorTree((payload) => {
+  api.on.getInspectorTree((payload, ctx) => {
     if (payload.inspectorId !== INSPECTOR_ID)
       return
+
+    if (ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`) {
+      removeRefreshInterval()
+      return
+    }
+    setRefreshInterval()
     const calculatedNodes = calculateNodes()
     payload.rootNodes = calculatedNodes
   })
 
   api.on.getInspectorState((payload, ctx) => {
-    if (payload.inspectorId !== INSPECTOR_ID || ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`)
+    if (payload.inspectorId !== INSPECTOR_ID)
       return
+
+    if (ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`) {
+      removeRefreshInterval()
+      return
+    }
+    setRefreshInterval()
     const decodedNode = decodeNodeId(payload.nodeId)
     if (decodedNode?.type === 'form' && decodedNode?.form)
       payload.state = buildFormState(decodedNode.form)
     else if (decodedNode?.type === 'field' && decodedNode?.field?.field)
       payload.state = buildFieldState(decodedNode?.field.field)
   })
-  watchDebounced(() => [DEVTOOLS_FORMS.value], () => {
-    refreshInspector()
-  }, { deep: true, debounce: 500 })
+  setRefreshInterval()
 }
 
 export function registerFormWithDevTools(form: Form<any>) {
