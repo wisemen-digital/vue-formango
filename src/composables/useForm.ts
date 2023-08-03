@@ -44,10 +44,6 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
   let onSubmitCb: ((data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) | null = null
 
-  const isDirty = computed(() => {
-    return JSON.stringify(form) !== JSON.stringify(initialState.value)
-  })
-
   const isValid = computed(() => {
     return Object.keys(errors.value).length === 0
   })
@@ -57,11 +53,10 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   const registeredFields = reactive(new Map<string, Field<any, any>>())
   const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
 
-  // const debug = (message: string): void => {
-  //   if (debugMode)
-  //     // eslint-disable-next-line no-console
-  //     console.log(message)
-  // }
+  const isDirty = computed(() => {
+    return [...registeredFields.values()].some(field => field.isDirty)
+      || [...registeredFieldArrays.values()].some(field => field.isDirty)
+  })
 
   const getPathId = (
     path: string,
@@ -257,7 +252,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     return fieldArray
   }
 
-  const trackFieldDepencies = (field: Field<any, any> | FieldArray<any>): void => {
+  const trackFieldDepencies = (field: Field<any, any> | FieldArray<any>, initialValue: any): void => {
     field._path = computed<string | null>(() => paths.get(field._id) ?? null) as any
 
     const value = computed(() => {
@@ -276,11 +271,18 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       return get(errors.value, field._path)
     }) as any
 
+    const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
+
     field.isDirty = computed<boolean>(() => {
       if (field._path == null)
         return false
 
-      return JSON.stringify(field.modelValue) !== JSON.stringify(get(initialState.value, field._path))
+      const initialFieldValue = get(initialState.value, field._path!) ?? parsedStringifiedInitialValue
+
+      if (field.modelValue === '' && initialFieldValue === null)
+        return false
+
+      return JSON.stringify(value.value) !== JSON.stringify(initialFieldValue)
     }) as any
 
     trackedDepencies.set(field._id, value)
@@ -298,7 +300,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       const isTracked = trackedDepencies.get(existingId)?.effect.active ?? false
 
       if (!isTracked)
-        trackFieldDepencies(field)
+        trackFieldDepencies(field, value ?? null)
 
       return field
     }
@@ -307,7 +309,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     paths.set(id, path)
 
     const field = createField(id, value)
-    trackFieldDepencies(field)
+    trackFieldDepencies(field, value ?? null)
 
     registeredFields.set(id, field)
 
@@ -343,7 +345,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       const isTracked = trackedDepencies.get(existingId)?.effect.active ?? false
 
       if (!isTracked)
-        trackFieldDepencies(fieldArray)
+        trackFieldDepencies(fieldArray, [])
 
       return fieldArray
     }
@@ -352,7 +354,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     paths.set(id, path)
 
     const fieldArray = createFieldArray(id)
-    trackFieldDepencies(fieldArray)
+    trackFieldDepencies(fieldArray, [])
 
     registeredFieldArrays.set(id, fieldArray)
 
