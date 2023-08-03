@@ -6,7 +6,7 @@ import type {
 import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
-import { getCurrentInstance, nextTick, onUnmounted, ref } from 'vue'
+import { getCurrentInstance, nextTick, onUnmounted } from 'vue'
 import type { Field, Form } from '../types'
 import type { EncodedNode } from '../types/devtools.type'
 import { throttle } from '../utils'
@@ -14,8 +14,8 @@ import { buildFieldState, buildFormState } from './devtoolsBuilders'
 
 let API: DevtoolsPluginApi<Record<string, any>> | undefined
 const INSPECTOR_ID = 'appwise-forms-inspector'
-const DEVTOOLS_FORMS = ref<Record<string, Form<any>>>({})
-const DEVTOOLS_FIELDS = ref<Record<string, { formId: string; field: Field<any, any> }>>({})
+const DEVTOOLS_FORMS: Record<string, Form<any>> = {}
+const DEVTOOLS_FIELDS: Record<string, { formId: string; field: Field<any, any> }> = {}
 
 const COLORS = {
   error: 0xBD4B4B,
@@ -31,10 +31,10 @@ const COLORS = {
 
 const calculateNodes = (): CustomInspectorNode[] => {
   let counter = 0
-  return Object.keys(DEVTOOLS_FORMS.value).map((formId: string) => {
-    const form = DEVTOOLS_FORMS.value[formId]
-    const formFields = Object.keys(DEVTOOLS_FIELDS.value).filter((fieldId: string) => {
-      const field = DEVTOOLS_FIELDS.value[fieldId]
+  return Object.keys(DEVTOOLS_FORMS).map((formId: string) => {
+    const form = DEVTOOLS_FORMS[formId]
+    const formFields = Object.keys(DEVTOOLS_FIELDS).filter((fieldId: string) => {
+      const field = DEVTOOLS_FIELDS[fieldId]
       return field.formId === form?._id
     })
     counter++
@@ -50,7 +50,7 @@ const calculateNodes = (): CustomInspectorNode[] => {
         validTag,
       ],
       children: formFields.map((fieldId: string) => {
-        const field = DEVTOOLS_FIELDS.value[fieldId]
+        const field = DEVTOOLS_FIELDS[fieldId]
         const hasErrors = field.field.errors && Object.values(field.field.errors).length > 0
         const errorTag = {
           label: 'Has error',
@@ -162,15 +162,15 @@ export function registerFormWithDevTools(form: Form<any>) {
   if (!form?._id)
     return
   const encodedForm = encodeNodeId({ type: 'form', id: form._id })
-  DEVTOOLS_FORMS.value[encodedForm] = form
+  DEVTOOLS_FORMS[encodedForm] = form
   onUnmounted(() => {
-    const formFields = Object.keys(DEVTOOLS_FIELDS.value).filter((fieldId: string) => {
-      const field = DEVTOOLS_FIELDS.value[fieldId]
+    const formFields = Object.keys(DEVTOOLS_FIELDS).filter((fieldId: string) => {
+      const field = DEVTOOLS_FIELDS[fieldId]
       return field.formId === form?._id
     })
-    delete DEVTOOLS_FORMS.value[encodedForm]
+    delete DEVTOOLS_FORMS[encodedForm]
     formFields.forEach((formFieldId: string) => {
-      delete DEVTOOLS_FIELDS.value[formFieldId]
+      delete DEVTOOLS_FIELDS[formFieldId]
     })
     refreshInspector()
   })
@@ -186,7 +186,7 @@ export function registerFieldWithDevTools(formId: string, field: Field<any, any>
     installDevtoolsPlugin(app as unknown as App)
   }
   const encodedField = encodeNodeId({ type: 'field', id: field._id })
-  DEVTOOLS_FIELDS.value[encodedField] = {
+  DEVTOOLS_FIELDS[encodedField] = {
     formId,
     field,
   }
@@ -215,15 +215,15 @@ function decodeNodeId(nodeId: string): FormNode | FieldNode | null {
     const decodedNode = JSON.parse(decodeURIComponent(atob(nodeId))) as EncodedNode
     if (!decodedNode)
       throw new Error('Invalid node id')
-    if (decodedNode.type === 'form' && DEVTOOLS_FORMS.value[nodeId]) {
+    if (decodedNode.type === 'form' && DEVTOOLS_FORMS[nodeId]) {
       return {
-        form: DEVTOOLS_FORMS.value[nodeId],
+        form: DEVTOOLS_FORMS[nodeId],
         type: 'form',
       }
     }
     else {
       return {
-        field: DEVTOOLS_FIELDS.value[nodeId],
+        field: DEVTOOLS_FIELDS[nodeId],
         type: 'field',
       }
     }
