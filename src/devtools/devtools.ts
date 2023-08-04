@@ -8,7 +8,7 @@ import {
 } from '@vue/devtools-api'
 import { getCurrentInstance, nextTick, onUnmounted } from 'vue'
 import type { Field, Form } from '../types'
-import type { EncodedNode } from '../types/devtools.type'
+import type { EncodedNode, FieldNode, FormNode, ObjectWithPossiblyFieldRecursive } from '../types/devtools.type'
 import { throttle } from '../utils'
 import { buildFieldState, buildFormState } from './devtoolsBuilders'
 
@@ -31,26 +31,27 @@ const COLORS = {
 
 let IS_INSTALLED = false
 
-function mapFieldsToObject(fields: Field<any, any>[]) {
+function mapFieldsToObject(fields: Field<any, any>[]): ObjectWithPossiblyFieldRecursive {
   const obj = {}
   fields.forEach((field) => {
-    const path = field._path as string
+    if (!field._path)
+      return
+    const path = field._path
     const pathArray = path?.split('.')
     if (!pathArray)
       return
-    const lastKey = pathArray.pop()
+    const lastKey = pathArray.pop() as keyof typeof lastObj
     const lastObj = pathArray.reduce<any>((obj, key) => obj[key] = obj[key] || {}, obj)
-    if (!lastObj[lastKey as any])
-      lastObj[lastKey as any] = {}
-
-    lastObj[lastKey as any].__FIELD__ = field
+    if (!lastObj[lastKey])
+      lastObj[lastKey] = {}
+    lastObj[lastKey].__FIELD__ = field
   })
   return obj
 }
 
 // recursively map the mappedObjects to a CustomInspectorNode
 let nonFieldsCounter = 0
-function mapObjectToCustomInspectorNode(obj: Record<string, any>): CustomInspectorNode[] {
+function mapObjectToCustomInspectorNode(obj: ObjectWithPossiblyFieldRecursive): CustomInspectorNode[] {
   return Object.keys(obj).map((key) => {
     const value = obj[key]
     if (value.__FIELD__) {
@@ -205,16 +206,19 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
   setRefreshInterval()
 }
 
-export function registerFormWithDevTools(form: Form<any>, name?: string) {
+const installPlugin = () => {
   const vm = getCurrentInstance()
-
   if (!IS_INSTALLED) {
     IS_INSTALLED = true
     const app = vm?.appContext.app
     if (!app)
       return
-    installDevtoolsPlugin(app as unknown as App)
+    installDevtoolsPlugin(app)
   }
+}
+
+export function registerFormWithDevTools(form: Form<any>, name?: string) {
+  installPlugin()
   if (!form?._id)
     return
 
@@ -234,20 +238,8 @@ export function registerFormWithDevTools(form: Form<any>, name?: string) {
   refreshInspector()
 }
 
-export const unregisterFieldWithDevTools = (field: Field<any, any>) => {
-  const encodedField = encodeNodeId({ type: 'field', id: field._id })
-  delete DEVTOOLS_FIELDS[encodedField]
-}
-
 export function registerFieldWithDevTools(formId: string, field: Field<any, any>) {
-  const vm = getCurrentInstance()
-  if (!IS_INSTALLED) {
-    IS_INSTALLED = true
-    const app = vm?.appContext.app
-    if (!app)
-      return
-    installDevtoolsPlugin(app as unknown as App)
-  }
+  installPlugin()
   const encodedField = encodeNodeId({ type: 'field', id: field._id })
   DEVTOOLS_FIELDS[encodedField] = {
     formId,
@@ -256,22 +248,13 @@ export function registerFieldWithDevTools(formId: string, field: Field<any, any>
   refreshInspector()
 }
 
+export const unregisterFieldWithDevTools = (field: Field<any, any>) => {
+  const encodedField = encodeNodeId({ type: 'field', id: field._id })
+  delete DEVTOOLS_FIELDS[encodedField]
+}
+
 function encodeNodeId(node: EncodedNode): string {
   return btoa(encodeURIComponent(JSON.stringify(node)))
-}
-
-interface FormNode {
-  type: 'form'
-  form: Form<any>
-  name?: string
-}
-
-interface FieldNode {
-  type: 'field'
-  field: {
-    formId: string
-    field: Field<any, any>
-  }
 }
 
 function decodeNodeId(nodeId: string): FormNode | FieldNode | null {
