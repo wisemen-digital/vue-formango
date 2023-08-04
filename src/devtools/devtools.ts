@@ -15,7 +15,7 @@ import { buildFieldState, buildFormState } from './devtoolsBuilders'
 let API: DevtoolsPluginApi<Record<string, any>> | undefined
 const INSPECTOR_ID = 'appwise-forms-inspector'
 const DEVTOOLS_FORMS: Record<string, { name: string; form: Form<any> }> = {}
-const DEVTOOLS_FIELDS: Record<string, { formId: string; field: Field<any, any> }> = {}
+const DEVTOOLS_FIELDS: Record<string, { formId: string; field: Field<any, any> & { __ID__?: string } }> = {}
 
 const COLORS = {
   error: 0xBD4B4B,
@@ -103,7 +103,7 @@ const calculateNodes = (): CustomInspectorNode[] => {
       const field = DEVTOOLS_FIELDS[key]
       return form.form._id === field.formId
     }).map((key) => {
-      const field = DEVTOOLS_FIELDS[key] as any
+      const field = DEVTOOLS_FIELDS[key]
       field.field.__ID__ = key
       return field.field
     })
