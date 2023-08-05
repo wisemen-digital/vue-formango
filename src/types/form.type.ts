@@ -161,7 +161,7 @@ export interface Form<T extends z.ZodType> {
   /**
    * The current state of the form.
    */
-  _state: Readonly<DeepPartial<z.infer<T>>>
+  state: Readonly<DeepPartial<z.infer<T>>>
   /**
    * The collection of all registered fields' errors.
    */
@@ -237,7 +237,7 @@ export interface UseForm<T extends z.ZodType> {
   onSubmitForm: (cb: (data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) => void
 
   /**
-   * The actual form instance.
+   * The form instance itself.
    */
   form: Form<T>
 }

@@ -458,7 +458,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
   const returnObject = reactive<any>({
     _id,
-    _state: readonly(form),
+    state: readonly(form),
     errors,
     isDirty,
     isSubmitting,
