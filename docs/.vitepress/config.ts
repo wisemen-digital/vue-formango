@@ -13,6 +13,7 @@ const api = [
 ]
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: '/forms/',
   title: 'Appwise Forms',
   description: 'A lightweight, zod-based Vue form library',
   themeConfig: {
