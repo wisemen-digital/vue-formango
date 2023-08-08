@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: latest
+          run_install: true
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Build histoire
+        run: pnpm run docs:build
+
+      - name: Upload production-ready build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./docs/.vitepress/dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./docs/.vitepress/dist
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir:  ./docs/.vitepress/dist
