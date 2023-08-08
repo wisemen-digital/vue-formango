@@ -5,7 +5,7 @@ export function buildFormState(form: Form<any>) {
     'Form state': [
       {
         key: 'state',
-        value: form._state,
+        value: form.state,
       },
       {
         key: 'errors',
