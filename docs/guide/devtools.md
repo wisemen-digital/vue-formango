@@ -1,8 +1,8 @@
 # Devtools
 
-If you have the official [Vue Devtools](https://devtools.vuejs.org/) installed, whenever you make a form, it will be viewable inside the appwise-forms tab.
+If you have the official [Vue Devtools](https://devtools.vuejs.org/) installed, whenever you make a form, it will be viewable inside the formango tab.
 
-First select the appwise-forms tab.
+First select the formango tab.
 
 Afterwords you will see all the registered forms that are currently active, which are named by the component they are registered in.
 
