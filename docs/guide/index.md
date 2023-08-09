@@ -35,11 +35,10 @@ const form = useForm(exampleForm,
 // Now you can register fields on the form, which are fully typed.
 // These fields will handle the actual data-binding
 const name = form.register('name')
-const email = form.register('email')
 </script>
 
 <template>
-  <CustomInput v-bind="field" />
+  <CustomInput v-bind="name" />
   <CustomInput v-bind="form.register('email')" />
 </template>
 ```
