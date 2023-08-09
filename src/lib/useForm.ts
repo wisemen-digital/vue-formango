@@ -21,7 +21,6 @@ import type {
   DeepPartial,
   Field,
   FieldArray,
-  MaybePromise,
   Path,
   Register,
   RegisterArray,
@@ -43,7 +42,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
   if (initialData != null)
     Object.assign(form, JSON.parse(JSON.stringify(initialData)))
 
-  let onSubmitCb: ((data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) | null = null
+  let onSubmitCb: UseForm<any>['onSubmitForm'] | null = null
 
   const isValid = computed(() => {
     return Object.keys(errors.value).length === 0
@@ -113,6 +112,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     const field = reactive<Field<any, any>>({
       '_id': id,
       '_path': path,
+      'isValid': false,
       'isDirty': false,
       'isTouched': false,
       'isChanged': false,
@@ -235,6 +235,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     const fieldArray = reactive<FieldArray<any>>({
       _id: id,
       _path: path,
+      isValid: false,
       isDirty: false,
       modelValue: value,
       errors: undefined,
@@ -264,6 +265,13 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     })
 
     field.modelValue = value
+
+    field.isValid = computed<boolean>(() => {
+      if (field._path == null)
+        return false
+
+      return get(errors.value, field._path) == null
+    }) as any
 
     field.errors = computed<z.ZodFormattedError<T> | undefined>(() => {
       if (field._path == null)
@@ -331,6 +339,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
 
     if (process.env.NODE_ENV === 'development')
       registerFieldWithDevTools(_id, field)
+
     return field
   }
 
@@ -384,7 +393,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       set(form, path, values[path])
   }
 
-  const setErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
+  const addErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
     const mergeErrors = (
       existingErrors: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
       err: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
@@ -435,8 +444,9 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     initialState.value = JSON.parse(JSON.stringify(form))
   }
 
-  const onSubmitForm = (
-    cb: (data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>,
+  const onSubmitForm = (cb: (
+    data: z.infer<T>,
+  ) => void,
   ): void => {
     onSubmitCb = cb
   }
@@ -469,7 +479,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     submit,
     unregister,
     setValues,
-    setErrors,
+    addErrors,
   })
 
   if (process.env.NODE_ENV === 'development')

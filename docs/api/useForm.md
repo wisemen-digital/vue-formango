@@ -18,7 +18,6 @@ const {
 
 onSubmitForm((values) => {
   console.log(values)
-  return null
 })
 
 form.register('name', 'default name')
@@ -36,7 +35,7 @@ form.register('name', 'default name')
 | register | `Function` | Register function to register a field, default value is optional. E.g: ```form.register('email', 'default email')```|
 | registerArray | `Function` | Register function to register an array field. E.g: ```form.registerArray('emails')``` |
 | unregister | `Function` | Unregister function to unregister a field. E.g: ```form.unregister('email')``` |
-| setErrors | `Function` | Manually set errors on fields. |
+| addErrors | `Function` | Manually set errors on fields. |
 | setValues | `Function` | Manually set values on fields. |
 | state | `Object` | Current state of the form |
 | submit | `Function` | Submit function to submit the form, which triggers the onSubmitForm callback if it is valid |
@@ -77,7 +76,6 @@ onSubmitForm((values) => {
   }
   */
   console.log(values)
-  return null
 })
 
 const email = form.register('email', 'default email')
@@ -87,7 +85,7 @@ onUnmounted(() => {
 })
 
 // Manually set errors on fields
-form.setErrors({
+form.addErrors({
   email: {
     _errors: ['Invalid email'],
   },

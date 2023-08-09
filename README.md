@@ -57,7 +57,7 @@ form.setValues({
 })
 
 // Set form errors.
-form.setErrors({
+form.addErrors({
   firstName: {
     _errors: ['Custom error']
   }

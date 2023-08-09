@@ -30,6 +30,10 @@ export interface Field<T, K> {
    */
   errors: z.ZodFormattedError<T> | undefined
   /**
+   * Indicates whether the field has any errors.
+   */
+  isValid: boolean
+  /**
    * Indicates whether the field has been touched (blurred).
    */
   isTouched: boolean
@@ -94,6 +98,10 @@ export interface FieldArray<T extends any[]> {
    */
   errors: z.ZodFormattedError<T> | undefined
   /**
+   * Indicates whether the field has any errors.
+   */
+  isValid: boolean
+  /**
    * Indicates whether the field value is different from its initial value.
    */
   isDirty: boolean
@@ -157,7 +165,6 @@ export interface Form<T extends z.ZodType> {
    * Internal id of the form, to track it in the devtools.
    */
   _id: string
-
   /**
    * The current state of the form.
    */
@@ -209,7 +216,7 @@ export interface Form<T extends z.ZodType> {
    *
    * @param errors The new errors for the form fields.
    */
-  setErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
+  addErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
   /**
    * Sets values in the form.
    *
@@ -234,8 +241,7 @@ export interface UseForm<T extends z.ZodType> {
    * Called when the form is valid and submitted.
    * @param data The current form data.
    */
-  onSubmitForm: (cb: (data: z.infer<T>) => MaybePromise<z.ZodFormattedError<z.infer<T>> | null>) => void
-
+  onSubmitForm: (cb: (data: z.infer<T>) => void) => void
   /**
    * The form instance itself.
    */

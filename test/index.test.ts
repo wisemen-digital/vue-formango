@@ -165,7 +165,7 @@ describe('always true', () => {
 
 //       expect(firstName.errors).toBeUndefined()
 
-//       form.setErrors({
+//       form.addErrors({
 //         firstName: {
 //           _errors: ['Error'],
 //         },
@@ -178,7 +178,7 @@ describe('always true', () => {
 //         _errors: ['Error'],
 //       })
 
-//       form.setErrors({
+//       form.addErrors({
 //         nested: {
 //           foo: {
 //             _errors: ['Error'],
