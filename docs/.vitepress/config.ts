@@ -10,6 +10,7 @@ const api = [
   { text: 'useForm', link: '/api/useForm' },
   { text: 'Field', link: '/api/field' },
   { text: 'Array field', link: '/api/array-field' },
+  { text: 'Types', link: '/api/types' },
 ]
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
