@@ -7,14 +7,14 @@
  * Colors
  * -------------------------------------------------------------------------- */
 
- :root {
-  --vp-c-brand: #646cff;
-  --vp-c-brand-light: #747bff;
-  --vp-c-brand-lighter: #9499ff;
-  --vp-c-brand-lightest: #bcc0ff;
-  --vp-c-brand-dark: #535bf2;
-  --vp-c-brand-darker: #454ce1;
-  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+:root {
+  --vp-c-brand: #d06129;
+  --vp-c-brand-light: #f9b336;
+  --vp-c-brand-lighter: #fbd755;
+  --vp-c-brand-lightest: #fbfae5;
+  --vp-c-brand-dark: #588365;
+  --vp-c-brand-darker: #20444c;
+  --vp-c-brand-dimm: rgba(88, 131, 101, 0.15);
 }
 
 /**
@@ -39,17 +39,13 @@
 
 :root {
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
-    120deg,
-    #bd34fe 30%,
-    #41d1ff
-  );
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg,
+      #588365 30%,
+      #d06129);
 
-  --vp-home-hero-image-background-image: linear-gradient(
-    -45deg,
-    #bd34fe 50%,
-    #47caff 50%
-  );
+  --vp-home-hero-image-background-image: linear-gradient(-45deg,
+      #d06129 50%,
+      #588365 50%);
   --vp-home-hero-image-filter: blur(40px);
 }
 
@@ -90,7 +86,7 @@
 }
 
 
-.VPImage {
+.box .VPImage {
   padding: 8px;
   background-color: var(--vp-c-brand-dimm);
   border-radius: 8px;
