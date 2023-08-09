@@ -89,3 +89,9 @@
   --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
+
+.VPImage {
+  padding: 8px;
+  background-color: var(--vp-c-brand-dimm);
+  border-radius: 8px;
+}

@@ -16,9 +16,16 @@ hero:
 features:
   - title: Fully typed
     details: Built from the ground up with typescript support
+    icon: 
+      src: /assets/ts.svg
   - title: Zod
     details: Zod based validation, which supports anything Zod can do
+    icon: 
+      src: /assets/zod.svg
   - title: Devtools
     details: Built-in Vue devtool support
+    icon: 
+      src: /assets/devtools.svg
+
 ---
 
