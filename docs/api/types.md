@@ -90,7 +90,7 @@ export interface Form<T extends z.ZodType> {
    *
    * @param errors The new errors for the form fields.
    */
-  setErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
+  addErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
   /**
    * Sets values in the form.
    *
