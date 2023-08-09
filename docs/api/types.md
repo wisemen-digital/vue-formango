@@ -138,6 +138,10 @@ export interface Field<T, K> {
    */
   errors: z.ZodFormattedError<T> | undefined
   /**
+   * Indicates whether the field has any errors.
+   */
+  isValid: boolean
+  /**
    * Indicates whether the field has been touched (blurred).
    */
   isTouched: boolean
@@ -212,6 +216,10 @@ export interface FieldArray<T extends any[]> {
    * The errors associated with the field and its children.
    */
   errors: z.ZodFormattedError<T> | undefined
+  /**
+   * Indicates whether the field has any errors.
+   */
+  isValid: boolean
   /**
    * Indicates whether the field value is different from its initial value.
    */

@@ -23,6 +23,7 @@ const field = form.register('name', 'default name')
 | isChanged    | `Boolean`  | Boolean indicating if the value of the field in changed.     |
 | isDirty | `Boolean` | Boolean indicating if the field is currently dirty |
 | isTouched | `Boolean` | Boolean indicating if the field is touched |
+| isValid | `Boolean` | Boolean indicating if the field is currently valid |
 | modelValue | `T`| The value of the field, used to bind v-model |
 | onBlur | `Function` | Handles the onBlur event, used to bind the event |
 | onChange | `Function` | Handles the onChange event, used to bind the event |

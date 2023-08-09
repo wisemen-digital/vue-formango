@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "Appwise Forms"
-  tagline: Fulle typed, Zod-based, light weight, Vue form library
+  tagline: Fully typed, Zod-based, light weight, Vue form library
   actions:
     - theme: brand
       text: Getting started
