@@ -1,4 +1,4 @@
 {
   "extends": "@antfu",
-  "ignorePatterns": ["/docs/.vitepress/cache/**/*"]
+  "ignorePatterns": ["/docs/.vitepress/**/*", "/docs/**/*.svg", "/docs/**/*.css"]
 }
