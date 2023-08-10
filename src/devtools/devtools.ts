@@ -13,7 +13,7 @@ import { throttle } from '../utils'
 import { buildFieldState, buildFormState } from './devtoolsBuilders'
 
 let API: DevtoolsPluginApi<Record<string, any>> | undefined
-const INSPECTOR_ID = 'appwise-forms-inspector'
+const INSPECTOR_ID = 'formango-inspector'
 const DEVTOOLS_FORMS: Record<string, { name: string; form: Form<any> }> = {}
 const DEVTOOLS_FIELDS: Record<string, { formId: string; field: Field<any, any> & { __ID__?: string } }> = {}
 
@@ -153,8 +153,8 @@ function installDevtoolsPlugin(app: App) {
   if (process.env.NODE_ENV === 'development') {
     setupDevtoolsPlugin(
       {
-        id: 'appwise-forms-devtools-plugin',
-        label: 'Appwise Forms Plugin',
+        id: 'formango-devtools-plugin',
+        label: 'Formango Plugin',
         packageName: '@appwise/forms',
         homepage: 'https://github.com/wouterlms/forms',
         app,
@@ -171,7 +171,7 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
   api.addInspector({
     id: INSPECTOR_ID,
     icon: 'rule',
-    label: 'appwise-forms',
+    label: 'formango',
     noSelectionText: 'Select a form node to inspect',
   })
 

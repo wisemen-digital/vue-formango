@@ -3,8 +3,13 @@
 layout: home
 
 hero:
-  name: "Appwise Forms"
-  tagline: Fully typed, Zod-based, light weight, Vue form library
+  name: "Form 'n Go"
+  text: "Fastest form development"
+  tagline: A juicy, fully typed, Zod-based, light weight, Vue form library
+  image:
+    src: /assets/mango_no_shadow.svg
+    alt: Formango
+
   actions:
     - theme: brand
       text: Getting started

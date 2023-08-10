@@ -15,7 +15,7 @@ const api = [
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: '/forms/',
-  title: 'Appwise Forms',
+  title: 'Formango',
   description: 'A lightweight, zod-based Vue form library',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
