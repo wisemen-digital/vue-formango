@@ -19,18 +19,30 @@ hero:
       link: /api/useForm
 
 features:
-  - title: Fully typed
-    details: Built from the ground up with typescript support
+  - title: Headless
+    details: Use together with any component library or your own custom UI.
+    icon: 
+      src: /assets/headless.png
+  - title: Type Safe
+    details: Built from the ground up with typescript support.
     icon: 
       src: /assets/ts.svg
   - title: Zod
-    details: Zod based validation, which supports anything Zod can do
+    details: Zod based validation, which supports anything Zod can do.
     icon: 
       src: /assets/zod.svg
+  - title: I18n
+    details: Using Zod and vue-i18n, the error messages are fully translatable.
+    icon: 
+      src: /assets/world.svg
   - title: Devtools
-    details: Built-in Vue devtool support
+    details: Built-in Vue devtool support.
     icon: 
       src: /assets/devtools.svg
+  - title: Fast Development
+    details: Simple API to develop forms at a never seen before speed.
+    icon: 
+      src: /assets/rocket.svg
 
 ---
 
