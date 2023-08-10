@@ -18,6 +18,9 @@ export default defineConfig({
   title: 'Formango',
   description: 'A lightweight, zod-based Vue form library',
   themeConfig: {
+    search: {
+      provider: 'local'
+    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Guide', link: '/guide/' },
