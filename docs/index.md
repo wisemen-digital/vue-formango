@@ -4,9 +4,10 @@ layout: home
 
 hero:
   name: "Form 'n Go"
+  text: "Fastest form development"
   tagline: A juicy, fully typed, Zod-based, light weight, Vue form library
   image:
-    src: /assets/mango.png
+    src: /assets/mango_no_shadow.svg
     alt: Formango
 
   actions:
