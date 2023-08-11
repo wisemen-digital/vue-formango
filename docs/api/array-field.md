@@ -88,6 +88,7 @@ export type ArrayForm = z.infer<typeof arrayForm>
 | empty | `Function` | Empties the array |
 | errors | `Object` | Current errors on the array |
 | isDirty | `Boolean` | Boolean indicating if the array is currently dirty |
+| isValid | `Boolean` | Boolean indicating if the array is currently valid |
 | modelValue | `T` | The value of the array |
 | setValue | `Function` | Sets the value of the array |
 
