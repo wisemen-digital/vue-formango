@@ -25,7 +25,7 @@ const exampleForm = z.object({
 })
 
 // Parse the schema to `useForm` along with a function to handle the submit.
-// Optionally, you can also pass a object to prepare the form.
+// Optionally, you can also pass an object to prepare the form.
 const form = useForm(exampleForm,
   // Loads the form with initial data
   {
