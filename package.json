@@ -1,12 +1,21 @@
 {
   "name": "formango",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "packageManager": "pnpm@7.12.0",
   "description": "",
   "author": "Wouter Laermans <wouter.laermans@appwise.be>",
   "license": "MIT",
-  "keywords": [],
+  "keywords": [
+    "vue",
+    "vue3",
+    "form",
+    "form validation",
+    "validation",
+    "zod",
+    "schema",
+    "formango"
+  ],
   "sideEffects": false,
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
