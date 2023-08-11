@@ -46,3 +46,12 @@ features:
 
 ---
 
+<script setup>
+import HomeTeam from './.vitepress/theme/components/HomeTeam.vue'
+import HomeCredits from './.vitepress/theme/components/HomeCredits.vue'
+
+</script>
+
+
+<HomeTeam />
+<HomeCredits />

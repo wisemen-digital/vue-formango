@@ -32,7 +32,7 @@ const field = form.register('name', 'default name')
 
 ## Example input
 
-Visit the [best practice page](../guide/best-practice#custom-input) to view an example of a custom input consuming the field API.
+Visit the [best practice page](../guide/best-practices/custom-input.md) to view an example of a custom input consuming the field API.
 
 ## Source
 
