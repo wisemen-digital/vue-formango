@@ -6,7 +6,7 @@ Initializes a form from a Zod schema and returns a form object and a onSubmitFor
 
 ```ts
 import { z } from 'zod'
-import { useForm } from '@appwise/forms'
+import { useForm } from 'formango'
 const exampleSchema = z.object({
   name: z.string().min(3).max(255),
 })
@@ -44,7 +44,7 @@ form.register('name', 'default name')
 
 ```ts
 import { z } from 'zod'
-import { useForm } from '@appwise/forms'
+import { useForm } from 'formango'
 
 const exampleSchema = z.object({
   name: z.string().min(3).max(255),

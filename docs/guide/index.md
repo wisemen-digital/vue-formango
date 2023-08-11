@@ -4,7 +4,7 @@
 
 
 ```bash
-pnpm i @appwise/forms
+pnpm i formango
 ```
 
 > The validation of this package relies on [Zod](https://zod.dev/).
@@ -13,7 +13,7 @@ pnpm i @appwise/forms
 
 ```vue
 <script setup lang="ts">
-import { useForm } from '@appwise/forms'
+import { useForm } from 'formango'
 import { z } from 'zod'
 
 // Create a schema

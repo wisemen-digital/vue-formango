@@ -8,7 +8,7 @@ Array field that gets returned when you register an array with the registerArray
 
 ```vue [ExampleArray.vue]
 <script setup lang="ts">
-import { useForm } from '@appwise/forms'
+import { useForm } from 'formango'
 import { arrayForm } from './array.model'
 
 const { form } = useForm(arrayForm)
@@ -34,7 +34,7 @@ const emails = form.registerArray('emails')
 
 ```vue [ExampleArrayField.vue]
 <script setup lang="ts">
-import type { Form } from '@appwise/forms'
+import type { Form } from 'formango'
 import type { arrayForm } from './array.model'
 
 interface Props {

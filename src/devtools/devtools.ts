@@ -155,7 +155,7 @@ function installDevtoolsPlugin(app: App) {
       {
         id: 'formango-devtools-plugin',
         label: 'Formango Plugin',
-        packageName: '@appwise/forms',
+        packageName: 'formango',
         homepage: 'https://github.com/wouterlms/forms',
         app,
         logo: 'https://ca.slack-edge.com/T060KMU2G-U01EJUUGLN9-b30972b08900-512',
