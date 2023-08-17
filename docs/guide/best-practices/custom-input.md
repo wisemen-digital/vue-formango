@@ -24,7 +24,7 @@ const emits = defineEmits<{
   blur: []
 }>()
 
-const model = defineModel<TModel>()
+const model = defineModel<string | number | null>()
 const errorShown = computed(() => errors._errors.length > 0 && (isTouched || isDirty))
 </script>
 
