@@ -1,8 +1,12 @@
 import { defineConfig } from 'vitepress'
 
+const bestPractices = [
+  { text: 'I18n', link: '/guide/best-practices/i18n' },
+  { text: 'Custom input', link: '/guide/best-practices/custom-input' },
+]
+
 const guide = [
   { text: 'Getting started', link: '/guide/' },
-  { text: 'Best Practice', link: '/guide/best-practice' },
   { text: 'Devtools', link: '/guide/devtools' },
 ]
 
@@ -12,6 +16,9 @@ const api = [
   { text: 'Array field', link: '/api/array-field' },
   { text: 'Types', link: '/api/types' },
 ]
+
+
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: '/forms/',
@@ -43,6 +50,10 @@ export default defineConfig({
       {
         text: 'Guide',
         items: guide,
+      },
+      {
+        text: 'Best practices',
+        items: bestPractices,
       },
       {
         text: 'API',
