@@ -21,7 +21,7 @@ const api = [
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: '/forms/',
+  base: '/vue-formango/',
   title: 'Formango',
   head: [
     ['link', { rel: "apple-touch-icon", sizes: "180x180", href: "/forms/apple-touch-icon.png"}],
