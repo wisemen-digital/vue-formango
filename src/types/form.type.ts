@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import type { DeepPartial } from './utils.type'
-import type { FieldPath, FieldPathValue } from './eager.type'
+import type { FieldPath, FieldPathValue, FieldValues } from './eager.type'
 
 export type MaybePromise<T> = T | Promise<T>
 
@@ -10,13 +10,14 @@ type ArrayElement<ArrayType extends any[]> =
 /**
  * Represents a form field.
  *
- * @typeparam T The type of the field value.
+ * @typeparam TValue The type of the field value.
+ * @typeparam TDefaultValue The type of the field default value.
  */
-export interface Field<T, K> {
+export interface Field<TValue, TDefaultValue = undefined> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string | null
+  _path: string
   /**
    * The unique id of the field.
    */
@@ -24,11 +25,11 @@ export interface Field<T, K> {
   /**
    * The current value of the field.
    */
-  modelValue: K extends undefined ? T | null : T
+  modelValue: TDefaultValue extends undefined ? TValue | null : TValue
   /**
    * The errors associated with the field and its children.
    */
-  errors: z.ZodFormattedError<T> | undefined
+  errors: z.ZodFormattedError<TValue> | undefined
   /**
    * Indicates whether the field has any errors.
    */
@@ -52,7 +53,7 @@ export interface Field<T, K> {
    *
    * @param value The new value of the field.
    */
-  'onUpdate:modelValue': (value: T) => void
+  'onUpdate:modelValue': (value: TValue) => void
   /**
    * Sets the current value of the field.
    *
@@ -60,7 +61,7 @@ export interface Field<T, K> {
    *
    * @param value The new value of the field.
    */
-  'setValue': (value: K extends undefined ? T | null : T) => void
+  'setValue': (value: TDefaultValue extends undefined ? TValue | null : TValue) => void
   /**
    * Called when the field input is blurred.
    */
@@ -69,6 +70,18 @@ export interface Field<T, K> {
    * Called when the field input value is changed.
    */
   onChange: () => void
+
+  register: <
+    TChildPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
+    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TChildPath> | undefined : never,
+  >(
+    path: TChildPath,
+    defaultValue?: TChildDefaultValue
+  ) => TValue extends FieldValues ? Field<FieldPathValue<TValue, TChildPath>, any> : never
+
+  registerArray: <TPath extends TValue extends FieldValues ? FieldPath<TValue> : never>(
+    path: TPath
+  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath>> : never
 }
 
 /**
@@ -76,7 +89,7 @@ export interface Field<T, K> {
  *
  * @typeparam T The type of the form schema.
  */
-export interface FieldArray<T extends any[]> {
+export interface FieldArray<TValue extends any[]> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
@@ -88,7 +101,7 @@ export interface FieldArray<T extends any[]> {
   /**
    * The current value of the field.
    */
-  modelValue: T
+  modelValue: TValue
   /**
    * Array of unique ids of the fields.
    */
@@ -96,7 +109,7 @@ export interface FieldArray<T extends any[]> {
   /**
    * The errors associated with the field and its children.
    */
-  errors: z.ZodFormattedError<T> | undefined
+  errors: z.ZodFormattedError<TValue> | undefined
   /**
    * Indicates whether the field has any errors.
    */
@@ -109,7 +122,7 @@ export interface FieldArray<T extends any[]> {
    * Insert a new field at the given index.
    * @param index The index of the field to insert.
    */
-  insert: (index: number, value?: ArrayElement<T>) => void
+  insert: (index: number, value?: ArrayElement<TValue>) => void
   /**
    * Remove a field at the given index.
    * @param index The index of the field to remove.
@@ -118,11 +131,11 @@ export interface FieldArray<T extends any[]> {
   /**
    * Add a new field at the beginning of the array.
    */
-  prepend: (value?: ArrayElement<T>) => void
+  prepend: (value?: ArrayElement<TValue>) => void
   /**
    * Add a new field at the end of the array.
    */
-  append: (value?: ArrayElement<T>) => void
+  append: (value?: ArrayElement<TValue>) => void
   /**
    * Remove the last field of the array.
    */
@@ -142,19 +155,32 @@ export interface FieldArray<T extends any[]> {
   /**
    * Set the current value of the field.
    */
-  setValue: (value: T) => void
+  setValue: (value: TValue) => void
+
+  register: <
+    TChildPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
+    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TChildPath> | undefined : never,
+  >(
+    path: TChildPath,
+    defaultValue?: TChildDefaultValue
+  ) => TValue extends FieldValues ? Field<FieldPathValue<TValue, TChildPath>, any> : never
+
+  registerArray: <TPath extends TValue extends FieldValues ? FieldPath<TValue> : never>(
+    path: TPath
+  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath>> : never
 }
 
-export type Register<T extends z.ZodType> = <
-  P extends FieldPath<z.infer<T>>,
-  V extends FieldPathValue<z.infer<T>, P>,
-  K extends FieldPathValue<z.infer<T>, P> | undefined,
->(field: P, defaultValue?: K) => Field<V, K>
+export type Register<TSchema extends z.ZodType> = <
+  TPath extends FieldPath<z.infer<TSchema>>,
+  TValue extends FieldPathValue<z.infer<TSchema>, TPath>,
+  TDefaultValue extends FieldPathValue<z.infer<TSchema>, TPath> | undefined,
+>(field: TPath, defaultValue?: TDefaultValue) => Field<TValue, TDefaultValue>
 
-export type RegisterArray<T extends z.ZodType> = <
-  P extends FieldPath<z.infer<T>>,
-  V extends FieldPathValue<z.infer<T>, P>,
->(field: P) => FieldArray<V>
+export type RegisterArray<TSchema extends z.ZodType> = <
+  TPath extends FieldPath<z.infer<TSchema>>,
+  TValue extends FieldPathValue<z.infer<TSchema>, TPath>,
+  TDefaultValue extends FieldPathValue<z.infer<TSchema>, TPath> | undefined,
+>(field: TPath, defaultValue?: TDefaultValue) => FieldArray<TValue>
 
 export type Unregister<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
@@ -164,7 +190,7 @@ export interface Form<T extends z.ZodType> {
   /**
    * Internal id of the form, to track it in the devtools.
    */
-  _id: string
+  // _id: string
   /**
    * The current state of the form.
    */

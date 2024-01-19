@@ -1,71 +1,85 @@
-import { z } from 'zod'
-
 import type { ComputedRef } from 'vue'
-import {
-  computed,
-  getCurrentInstance,
-  reactive,
-  readonly,
-  ref,
-  watch,
-} from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { z } from 'zod'
+import deepClone from 'deep-clone'
+import type { DeepPartial, Field, FieldArray, Form, Path, Register, RegisterArray, Unregister } from '../types'
+import { generateId, get, set, unset } from '../utils'
 
-import {
-  generateId,
-  get,
-  set,
-  unset,
-} from '../utils'
+interface UseFormReturnType<TSchema extends z.ZodType> {
+  /**
+   * Called when the form is valid and submitted.
+   * @param data The current form data.
+   */
+  onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => void
+  /**
+   * The form instance itself.
+   */
+  form: Form<TSchema>
+}
 
-import type {
-  DeepPartial,
-  Field,
-  FieldArray,
-  Path,
-  Register,
-  RegisterArray,
-  Unregister,
-  UseForm,
-} from '../types'
-import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
+interface UseFormOptions<TSchema extends z.ZodType> {
+  schema: TSchema
+  initialState?: z.infer<TSchema>
+}
 
-export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>>): UseForm<T> => {
-  const form = reactive<DeepPartial<z.infer<T>>>({} as any)
-  const errors = ref<z.ZodFormattedError<T>>({} as any)
-  const _id = generateId()
+export function useForm<TSchema extends z.ZodType>(
+  {
+    schema,
+    initialState,
+  }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
+  // The current state of the form
+  // When a field is registered, it will be added to this object
+  // The form will only be submitted if this state matches the schema
+  const form = reactive<DeepPartial<z.infer<TSchema>>>({} as DeepPartial<z.infer<TSchema>>)
 
-  const isSubmitting = ref(false)
-  const hasAttemptedToSubmit = ref(false)
+  // The errors of the form
+  const errors = ref<z.ZodFormattedError<TSchema>>({} as z.ZodFormattedError<TSchema>)
 
-  const initialState = ref<any>(initialData ? JSON.parse(JSON.stringify(initialData)) : null)
+  let onSubmitCb: UseFormReturnType<TSchema>['onSubmitForm'] | null = null
 
-  if (initialData != null)
-    Object.assign(form, JSON.parse(JSON.stringify(initialData)))
+  const isSubmitting = ref<boolean>(false)
+  const hasAttemptedToSubmit = ref<boolean>(false)
 
-  let onSubmitCb: UseForm<any>['onSubmitForm'] | null = null
+  // The initial state of the form
+  // This is used to keep track of whether a field has been modified (isDirty)
+  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState ? deepClone(initialState) : null)
 
-  const isValid = computed(() => {
-    return Object.keys(errors.value).length === 0
-  })
-
+  // Tracks all the registered paths (id, path)
   const paths = reactive(new Map<string, string>())
-  const trackedDepencies = reactive(new Map<string, ComputedRef<any>>())
+
+  // Tracks all the paths by id with a computed value
+  // Because of how Vue works, we need to track the computed value
+  // Otherwise, when a component is unmounted, the computed value will be lost
+  const trackedDepencies = reactive(new Map<string, ComputedRef<unknown>>())
+
+  // Tracks all the registered fields
+  // Used so that we don't need to re-register a field when it is already registered
   const registeredFields = reactive(new Map<string, Field<any, any>>())
   const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
 
-  const isDirty = computed(() => {
-    return [...registeredFields.values()].some(field => field.isDirty)
-      || [...registeredFieldArrays.values()].some(field => field.isDirty)
+  const isDirty = computed<boolean>(() => {
+    return [
+      ...registeredFields.values(),
+      ...registeredFieldArrays.values(),
+    ].some(field => field.isDirty)
   })
 
-  const getPathId = (
+  const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
+
+  const getIdByPath = (
+    paths: Map<string, string>,
     path: string,
   ): string | null => [...paths.entries()].find(([, p]) => p === path)?.[0] ?? null
 
-  // * form.register('array.0')
-  // * form.register('array.1')
-  // ! form.unregister('array.0') --> array.1 is now array.0
-  // * form.register('array.1') --> should work since array.1 -> array.0
+  const getIsTrackedbyId = (
+    trackedDepencies: Map<string, ComputedRef<unknown>>,
+    pathId: string,
+  ): boolean => trackedDepencies.get(pathId)?.effect.active ?? false
+
+  // form.register('array.0')
+  // form.register('array.1')
+  // form.unregister('array.0') --> array.1 is now array.0
+  // form.register('array.1') --> should work since array.1 -> array.0
   const updatePaths = (path: string): void => {
     const isArray = !Number.isNaN(path.split('.').pop())
 
@@ -96,19 +110,20 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       }
     }
     else {
-      const id = getPathId(path)!
+      const id = getIdByPath(paths, path) ?? null
+
+      if (id === null)
+        throw new Error('Path not found')
 
       paths.delete(id)
     }
   }
 
-  const createField = <T, K = T | null>(id: string, defaultValue: K = null as K): Field<any, any> => {
-    const path = paths.get(id) as string
-    const value = get(form, path)
-
-    if (value == null)
-      set(form, path, defaultValue)
-
+  const createField = (
+    id: string,
+    path: string,
+    defaultOrExistingValue: unknown,
+  ): Field<any, any> => {
     const field = reactive<Field<any, any>>({
       '_id': id,
       '_path': path,
@@ -116,58 +131,62 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       'isDirty': false,
       'isTouched': false,
       'isChanged': false,
-      'modelValue': value,
-      'onUpdate:modelValue': (newValue: unknown) => {
-        // If the value is an empty string, set it to null to make sure the field is not dirty
-        const valueOrNull = newValue === '' ? null : newValue
-        const currentPath = paths.get(id) ?? null
-
-        if (currentPath === null)
-          return
-
-        set(form, currentPath, valueOrNull)
-      },
+      'modelValue': defaultOrExistingValue,
       'errors': undefined,
+      'onUpdate:modelValue': (newValue) => {
+        set(form, path, newValue)
+      },
       'onBlur': () => {
         field.isTouched = true
       },
       'onChange': () => {
         field.isChanged = true
       },
-      'setValue': (value: unknown) => {
-        field['onUpdate:modelValue'](value)
+      'setValue': (newValue) => {
+        field['onUpdate:modelValue'](newValue)
+      },
+      'register': (childPath, defaultValue) => {
+        const fullPath = `${path}.${childPath}` as Path<TSchema>
+
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return register(fullPath, defaultValue) as Field<any, any>
+      },
+      'registerArray': (childPath) => {
+        const fullPath = `${path}.${childPath}` as Path<TSchema>
+
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return registerArray(fullPath) as FieldArray<any>
       },
     })
 
     return field
   }
 
-  const createFieldArray = <T>(id: string): FieldArray<any> => {
-    const path = paths.get(id) as string
-    const value = get(form, path)
-
-    if (value == null)
-      set(form, path, [])
-
+  const createFieldArray = (
+    id: string,
+    path: string,
+    defaultOrExistingValue: unknown[],
+  ): FieldArray<any> => {
     const fields = reactive<string[]>([])
 
-    for (let i = 0; i < value?.length ?? 0; i++) {
+    for (let i = 0; i < defaultOrExistingValue.length; i++) {
       const fieldId = generateId()
       fields.push(fieldId)
     }
 
-    const insert = (index: number, value: unknown): void => {
+    const insert = (index: number, value: unknown) => {
       fields[index] = generateId()
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      register(`${path}.${index}` as Path<T>, value as any)
+      register(`${path}.${index}` as Path<TSchema>, value as any)
     }
 
     const remove = (index: number): void => {
       const currentPath = paths.get(id) as string
 
       fields.splice(index, 1)
+
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      unregister(`${currentPath}.${index}` as Path<T>)
+      unregister(`${currentPath}.${index}` as Path<TSchema>)
     }
 
     const prepend = (value: unknown): void => {
@@ -202,8 +221,11 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       const fromPath = `${currentPath}.${from}`
       const toPath = `${currentPath}.${to}`
 
-      const fromId = getPathId(fromPath)!
-      const toId = getPathId(toPath)!
+      const fromId = getIdByPath(paths, fromPath)
+      const toId = getIdByPath(paths, toPath)
+
+      if (fromId === null || toId === null)
+        throw new Error('Path not found')
 
       for (const [id, p] of paths.entries()) {
         if (p.startsWith(fromPath)) {
@@ -237,7 +259,7 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       _path: path,
       isValid: false,
       isDirty: false,
-      modelValue: value,
+      modelValue: defaultOrExistingValue,
       errors: undefined,
       append,
       fields,
@@ -249,82 +271,63 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       move,
       empty,
       setValue,
+      register: (childPath, defaultValue) => {
+        const fullPath = `${path}.${childPath}` as Path<TSchema>
+
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return register(fullPath, defaultValue) as Field<any, any>
+      },
+      registerArray: (childPath) => {
+        const fullPath = `${path}.${childPath}` as Path<TSchema>
+
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return registerArray(fullPath) as FieldArray<any>
+      },
     })
 
     return fieldArray
   }
 
-  const trackFieldDepencies = (field: Field<any, any> | FieldArray<any>, initialValue: any): void => {
-    field._path = computed<string | null>(() => paths.get(field._id) ?? null) as any
+  const getFieldWithTrackedDepencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
+    field: TFieldArray,
+    initialValue: unknown,
+  ): TFieldArray => {
+    const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
 
-    const value = computed(() => {
-      if (field._path == null)
-        return null
+    field._path = computed<string>(() => {
+      const path = paths.get(field._id) ?? null
 
+      if (path === null)
+        throw new Error('Path not found')
+
+      return path
+    }) as unknown as string
+
+    field.modelValue = computed<unknown>(() => {
       return get(form, field._path)
     })
 
-    field.modelValue = value
-
     field.isValid = computed<boolean>(() => {
-      if (field._path == null)
-        return false
-
-      return get(errors.value, field._path) == null
-    }) as any
-
-    field.errors = computed<z.ZodFormattedError<T> | undefined>(() => {
-      if (field._path == null)
-        return undefined
-
-      return get(errors.value, field._path)
-    }) as any
-
-    const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
+      return get(errors.value, field._path) === undefined
+    }) as unknown as boolean
 
     field.isDirty = computed<boolean>(() => {
-      if (field._path == null)
+      const initialValue = get(initialFormState.value, field._path) ?? parsedStringifiedInitialValue
+
+      if (field.modelValue === '' && initialValue === null)
         return false
 
-      const initialFieldValue = get(initialState.value, field._path!) ?? parsedStringifiedInitialValue
+      return JSON.stringify(field.modelValue) !== JSON.stringify(initialValue)
+    }) as unknown as boolean
 
-      if (field.modelValue === '' && initialFieldValue === null)
-        return false
+    field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
+      return get(errors.value, field._path)
+    }) as unknown as z.ZodFormattedError<TSchema>
 
-      return JSON.stringify(value.value) !== JSON.stringify(initialFieldValue)
-    }) as any
-
-    trackedDepencies.set(field._id, value)
+    return field
   }
 
-  const register: Register<T> = (path, value) => {
-    const existingId = getPathId(path)
-
-    if (existingId != null) {
-      const field = registeredFields.get(existingId)
-
-      if (field == null)
-        throw new Error(`Path ${path} is already registered as a field array`)
-
-      const isTracked = trackedDepencies.get(existingId)?.effect.active ?? false
-
-      if (!isTracked)
-        trackFieldDepencies(field, value ?? null)
-
-      return field
-    }
-
-    const id = generateId()
-    paths.set(id, path)
-
-    const field = createField(id, value)
-    trackFieldDepencies(field, value ?? null)
-
-    registeredFields.set(id, field)
-
-    // If registered path is child of an array, we also need to register the array index
-    // So e.g. if we register `array.0.foo`, we also need to register `array.0`
-    // It should work for nested arrays. So e.g. `array.0.test.0.foo` should also register `array.0.test.0`
+  const registerParentPaths = (path: string): void => {
     const pathParts = path.split('.')
 
     for (let i = pathParts.length - 1; i >= 0; i--) {
@@ -333,88 +336,130 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
       if (!isNaN(Number(part))) {
         const arrayPath = pathParts.slice(0, i + 1).join('.')
 
-        register(arrayPath as Path<T>)
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        register(arrayPath as Path<TSchema>)
       }
     }
-
-    if (process.env.NODE_ENV === 'development')
-      registerFieldWithDevTools(_id, field)
-
-    return field
   }
 
-  const registerArray: RegisterArray<T> = (path) => {
-    const existingId = getPathId(path)
+  const register: Register<TSchema> = (path, defaultValue) => {
+    const existingId = getIdByPath(paths, path)
 
-    if (existingId != null) {
-      const fieldArray = registeredFieldArrays.get(existingId)
+    // Check if the field is already registered
+    if (existingId) {
+      const field = registeredFields.get(existingId) ?? null
 
-      if (fieldArray == null)
-        throw new Error(`Path ${path} is already registered as a field`)
+      if (field === null)
+        throw new Error(`${path} is already registered as a field array`)
 
-      const isTracked = trackedDepencies.get(existingId)?.effect.active ?? false
+      // If it is, check if it is still being tracked
+      const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
+      // If it is, return the field
+      if (existingTrackedDependency)
+        return field
 
-      if (!isTracked)
-        trackFieldDepencies(fieldArray, [])
-
-      return fieldArray
+      // If it isn't being tracked anymore, retrack it
+      return getFieldWithTrackedDepencies(field, defaultValue ?? null)
     }
 
+    // If it isn't registered, register it
+
+    // Even if the field is not registered, it might already have a value
+    const value = get(form, path)
+
+    // If the value is undefined, set it to the default value
+    if (value == null)
+      set(form, path, defaultValue ?? null)
+
     const id = generateId()
+
+    // Track the path
     paths.set(id, path)
 
-    const fieldArray = createFieldArray(id)
-    trackFieldDepencies(fieldArray, [])
+    const field = createField(id, path, value)
 
-    registeredFieldArrays.set(id, fieldArray)
+    // Register the field
+    registeredFields.set(id, field)
 
-    return fieldArray
+    // If registered path is child of an array, we also need to register the array index
+    // So e.g. if we register `array.0.foo`, we also need to register `array.0`
+    // It should work for nested arrays. So e.g. `array.0.test.0.foo` should also register `array.0.test.0`
+    registerParentPaths(path)
+
+    // Track the field
+    return getFieldWithTrackedDepencies(field, defaultValue ?? null)
   }
 
-  const unregister: Unregister<T> = (path) => {
-    const id = getPathId(path)
+  const registerArray: RegisterArray<TSchema> = (path, defaultValue) => {
+    const existingId = getIdByPath(paths, path)
 
-    if (id == null)
-      return
+    // Check if the field is already registered
+    if (existingId !== null) {
+      // Check if it is registered as a field array
+      const fieldArray = registeredFieldArrays.get(existingId) ?? null
+
+      if (fieldArray === null)
+        throw new Error(`${path} is already registered as a field`)
+
+      // Check if it is still being tracked
+      const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
+
+      // If it is, return the field
+      if (existingTrackedDependency)
+        return fieldArray
+
+      // If it isn't being tracked anymore, retrack it
+      return getFieldWithTrackedDepencies(fieldArray, [])
+    }
+
+    // If it isn't registered, register it
+    // Even if the field is not registered, it might already have a value
+    const value = get(form, path)
+
+    // If the value is undefined, set it to the default value
+    if (value == null)
+      set(form, path, [])
+
+    const id = generateId()
+
+    // Track the path
+    paths.set(id, path)
+
+    const fieldArray = createFieldArray(id, path, value ?? [])
+
+    // If a default value is set, register each key
+    if (defaultValue !== undefined) {
+      const defaultValueAsArray = defaultValue as unknown[]
+
+      defaultValueAsArray.forEach((value) => {
+        fieldArray.append(value)
+      })
+    }
+
+    // Register the field
+    registeredFieldArrays.set(id, fieldArray)
+
+    // If registered path is child of an array, we also need to register the array index
+    // So e.g. if we register `array.0.foo`, we also need to register `array.0`
+    // It should work for nested arrays. So e.g. `array.0.test.0.foo` should also register `array.0.test.0`
+    registerParentPaths(path)
+
+    // Track the field
+    return getFieldWithTrackedDepencies(fieldArray, [])
+  }
+
+  const unregister: Unregister<TSchema> = (path) => {
+    const id = getIdByPath(paths, path)
+
+    if (id === null)
+      throw new Error(`Could not unregister ${path} because it is not registered`)
 
     updatePaths(path)
     unset(form, path)
 
-    if (process.env.NODE_ENV === 'development')
-      unregisterFieldWithDevTools(registeredFields.get(id)!)
-
     registeredFields.delete(id)
     trackedDepencies.delete(id)
     paths.delete(id)
-  }
-
-  const setValues = (values: DeepPartial<z.infer<T>>): void => {
-    for (const path in values)
-      set(form, path, values[path])
-  }
-
-  const addErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<T>>>): void => {
-    const mergeErrors = (
-      existingErrors: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
-      err: DeepPartial<z.ZodFormattedError<z.infer<T>>>,
-    ): void => {
-      for (const key in err) {
-        if (key === '_errors') {
-          existingErrors[key] = err[key]
-        }
-        else {
-          if (existingErrors[key] == null) {
-            existingErrors[key] = {
-              _errors: [],
-            } as any
-          }
-
-          mergeErrors(existingErrors[key] as any, err[key] as any)
-        }
-      }
-    }
-
-    mergeErrors(errors.value, err)
   }
 
   const blurAll = (): void => {
@@ -435,20 +480,40 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     if (onSubmitCb == null)
       throw new Error('Attempted to submit form but `onSubmitForm` callback is not registered')
 
-    const customErrors = await onSubmitCb?.(schema.parse(form))
+    await onSubmitCb(schema.parse(form))
 
-    if (errors.value != null)
-      Object.assign(errors.value, customErrors)
+    initialFormState.value = deepClone(form)
 
     isSubmitting.value = false
-    initialState.value = JSON.parse(JSON.stringify(form))
   }
 
-  const onSubmitForm = (cb: (
-    data: z.infer<T>,
-  ) => void,
-  ): void => {
-    onSubmitCb = cb
+  const setValues = (values: DeepPartial<z.infer<TSchema>>): void => {
+    for (const path in values)
+      set(form, path, values[path])
+  }
+
+  const addErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>): void => {
+    const mergeErrors = (
+      existingErrors: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
+      err: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
+    ): void => {
+      for (const key in err) {
+        if (key === '_errors') {
+          existingErrors[key] = err[key]
+          continue
+        }
+
+        if (existingErrors[key] == null) {
+          existingErrors[key] = {
+            _errors: [],
+          } as any
+        }
+
+        mergeErrors(existingErrors[key] as any, err[key] as any)
+      }
+    }
+
+    mergeErrors(errors.value, err)
   }
 
   watch(form, async () => {
@@ -466,27 +531,23 @@ export default <T extends z.ZodType>(schema: T, initialData?: Partial<z.infer<T>
     immediate: true,
   })
 
-  const returnObject = reactive<any>({
-    _id,
-    state: readonly(form),
-    errors,
-    isDirty,
-    isSubmitting,
-    hasAttemptedToSubmit,
-    isValid,
-    register,
-    registerArray,
-    submit,
-    unregister,
-    setValues,
-    addErrors,
-  })
-
-  if (process.env.NODE_ENV === 'development')
-    registerFormWithDevTools(returnObject, getCurrentInstance()?.type.__name)
-
   return {
-    onSubmitForm,
-    form: returnObject,
+    form: reactive<Form<TSchema>>({
+      state: form,
+      errors: errors as z.ZodFormattedError<z.infer<TSchema>>,
+      isDirty: isDirty as unknown as boolean,
+      isValid: isValid as unknown as boolean,
+      isSubmitting: isSubmitting as unknown as boolean,
+      hasAttemptedToSubmit: hasAttemptedToSubmit as unknown as boolean,
+      register,
+      registerArray,
+      unregister,
+      submit,
+      setValues,
+      addErrors,
+    }),
+    onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => {
+      onSubmitCb = cb
+    },
   }
 }
