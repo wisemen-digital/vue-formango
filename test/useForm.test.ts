@@ -276,6 +276,80 @@ describe('useForm', () => {
     })
   })
 
+  describe('set a value of a field', () => {
+    it('should set a value of a field with `onUpdate:modelValue`', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name')
+
+      name['onUpdate:modelValue']('John')
+
+      expect(name.modelValue).toEqual('John')
+
+      expect(form.state).toEqual({
+        name: 'John',
+      })
+    })
+
+    it('should set a value of a field with `setValue`', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name')
+
+      name.setValue('John')
+
+      expect(name.modelValue).toEqual('John')
+
+      expect(form.state).toEqual({
+        name: 'John',
+      })
+    })
+
+    it('should set a value of a field with `form.setValues`', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name')
+
+      form.setValues({
+        name: 'John',
+      })
+
+      expect(name.modelValue).toEqual('John')
+
+      expect(form.state).toEqual({
+        name: 'John',
+      })
+    })
+
+    it('should set a nested value of a field with `form.setValues`', () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const b = form.register('a.b')
+
+      form.setValues({
+        a: {
+          b: 'John',
+        },
+      })
+
+      expect(b.modelValue).toEqual('John')
+
+      expect(form.state).toEqual({
+        a: {
+          b: 'John',
+        },
+      })
+    })
+  })
+
   describe('isDirty', () => {
     it('should be false by default', () => {
       const { form } = useForm({
@@ -377,7 +451,7 @@ describe('useForm', () => {
       expect(name.isTouched).toEqual(false)
     })
 
-    it('should be true when field is blurred', () => {
+    it('should be true when `onBlur` is called', () => {
       const { form } = useForm({
         schema: basicSchema,
       })
@@ -390,8 +464,45 @@ describe('useForm', () => {
     })
   })
 
+  describe('isChanged', () => {
+    it('should be false by default', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name')
+
+      expect(name.isChanged).toEqual(false)
+    })
+
+    it('should be true when `onChange` is called', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name')
+
+      name.onChange()
+
+      expect(name.isChanged).toEqual(true)
+    })
+  })
+
   describe('errors', () => {
     it('should not have any errors when all fields are valid', async () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name', 'John')
+
+      await sleep(0)
+
+      expect(form.errors).toEqual({})
+      expect(name.errors).toBeUndefined()
+    })
+
+    it('should have errors when a field is invalid', async () => {
       const { form } = useForm({
         schema: basicSchema,
       })
@@ -402,6 +513,64 @@ describe('useForm', () => {
 
       expect(form.errors).toBeDefined()
       expect(name.errors).toBeDefined()
+    })
+  })
+
+  describe('submit', () => {
+    it('should submit', async () => {
+      const { form, onSubmitForm } = useForm({
+        schema: basicSchema,
+      })
+
+      form.register('name', 'John')
+
+      let submitted = false
+
+      onSubmitForm(() => {
+        submitted = true
+      })
+
+      await sleep(0)
+      await form.submit()
+
+      expect(submitted).toEqual(true)
+      expect(form.hasAttemptedToSubmit).toEqual(true)
+    })
+
+    it('should blur all fields', async () => {
+      const { form, onSubmitForm } = useForm({
+        schema: basicSchema,
+      })
+
+      const name = form.register('name', 'John')
+
+      expect(name.isTouched).toEqual(false)
+
+      onSubmitForm(() => {})
+
+      await sleep(0)
+      await form.submit()
+
+      expect(name.isTouched).toEqual(true)
+    })
+
+    it('should not submit if there are errors', async () => {
+      const { form, onSubmitForm } = useForm({
+        schema: basicSchema,
+      })
+
+      let submitted = false
+
+      form.register('name', 'Jon')
+
+      onSubmitForm(() => {
+        submitted = true
+      })
+
+      await sleep(0)
+      await form.submit()
+
+      expect(submitted).toEqual(false)
     })
   })
 })
