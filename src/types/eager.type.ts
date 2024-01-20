@@ -11,7 +11,7 @@ import type {
   TupleKeys,
 } from './common.type'
 
-type FieldValues = Record<string, any>
+export type FieldValues = Record<string, any>
 
 /**
  * Helper function to break apart T1 and check if any are equal to T2

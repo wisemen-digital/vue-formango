@@ -31,6 +31,7 @@
     "release": "bumpp && npm publish",
     "start": "esno src/index.ts",
     "test": "vitest",
+    "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -43,6 +44,7 @@
   "dependencies": {
     "@vue/devtools-api": "^6.5.0",
     "@vueuse/core": "^10.3.0",
+    "deep-clone": "^4.0.0",
     "zod": "^3.21.4"
   },
   "devDependencies": {
@@ -50,6 +52,7 @@
     "@antfu/ni": "^0.20.0",
     "@antfu/utils": "^0.7.2",
     "@types/node": "^18.14.1",
+    "@vitest/coverage-v8": "^1.2.1",
     "bumpp": "^9.0.0",
     "eslint": "^8.34.0",
     "esno": "^0.16.3",
@@ -61,7 +64,7 @@
     "unbuild": "^1.1.2",
     "vite": "^4.1.4",
     "vitepress": "1.0.0-beta.7",
-    "vitest": "^0.28.5",
+    "vitest": "^1.2.1",
     "vue": "^3.2.47"
   },
   "simple-git-hooks": {
