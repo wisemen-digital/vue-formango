@@ -514,6 +514,72 @@ describe('useForm', () => {
       expect(form.errors).toBeDefined()
       expect(name.errors).toBeDefined()
     })
+
+    it('should set errors with `addErrors`', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      form.addErrors({
+        name: {
+          _errors: ['Invalid name'],
+        },
+      })
+
+      expect(form.errors).toEqual({
+        name: {
+          _errors: ['Invalid name'],
+        },
+      })
+    })
+
+    it('should set nested errors with `addErrors` while existing errors remain', () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      form.addErrors({
+        a: {
+          b: {
+            _errors: ['Invalid name'],
+          },
+        },
+      })
+
+      expect(form.errors).toEqual({
+        a: {
+          _errors: [],
+          b: {
+            _errors: ['Invalid name'],
+          },
+        },
+      })
+
+      form.addErrors({
+        a: {
+          bObj: {
+            c: {
+              _errors: ['Invalid name'],
+            },
+          },
+        },
+      })
+
+      expect(form.errors).toEqual({
+        a: {
+          _errors: [],
+          b: {
+            _errors: ['Invalid name'],
+          },
+          bObj: {
+            _errors: [],
+            c: {
+              _errors: ['Invalid name'],
+            },
+          },
+        },
+      })
+    })
   })
 
   describe('submit', () => {
