@@ -122,3 +122,7 @@ export type Merge<A, B> = {
         ? B[K]
         : never;
 }
+
+export type NullableKeys<T> = {
+  [K in keyof T]: T[K] | null
+}

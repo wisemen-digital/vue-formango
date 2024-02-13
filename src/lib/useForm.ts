@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
 import deepClone from 'deep-clone'
-import type { DeepPartial, Field, FieldArray, Form, Path, Register, RegisterArray, Unregister } from '../types'
+import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 
 interface UseFormReturnType<TSchema extends z.ZodType> {
@@ -19,7 +19,7 @@ interface UseFormReturnType<TSchema extends z.ZodType> {
 
 interface UseFormOptions<TSchema extends z.ZodType> {
   schema: TSchema
-  initialState?: z.infer<TSchema>
+  initialState?: NullableKeys<z.infer<TSchema>>
 }
 
 export function useForm<TSchema extends z.ZodType>(
@@ -35,7 +35,7 @@ export function useForm<TSchema extends z.ZodType>(
   // The errors of the form
   const errors = ref<z.ZodFormattedError<TSchema>>({} as z.ZodFormattedError<TSchema>)
 
-  let onSubmitCb: UseFormReturnType<TSchema>['onSubmitForm'] | null = null
+  let onSubmitCb: ((data: z.infer<TSchema>) => MaybePromise<void>) | null = null
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
@@ -56,6 +56,9 @@ export function useForm<TSchema extends z.ZodType>(
   // Used so that we don't need to re-register a field when it is already registered
   const registeredFields = reactive(new Map<string, Field<any, any>>())
   const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
+
+  if (initialState != null)
+    Object.assign(form, deepClone(initialState))
 
   const isDirty = computed<boolean>(() => {
     return [
@@ -452,7 +455,7 @@ export function useForm<TSchema extends z.ZodType>(
     const id = getIdByPath(paths, path)
 
     if (id === null)
-      throw new Error(`Could not unregister ${path} because it is not registered`)
+      throw new Error(`Could not unregister ${path} because it does not exist. This might be because it was never registered or because it was already unregistered.`)
 
     updatePaths(path)
     unset(form, path)
@@ -475,6 +478,9 @@ export function useForm<TSchema extends z.ZodType>(
     if (!isValid.value)
       return
 
+    // We need to keep track of the current form state, because the form might change while submitting
+    const currentFormState = deepClone(form)
+
     isSubmitting.value = true
 
     if (onSubmitCb == null)
@@ -482,7 +488,7 @@ export function useForm<TSchema extends z.ZodType>(
 
     await onSubmitCb(schema.parse(form))
 
-    initialFormState.value = deepClone(form)
+    initialFormState.value = deepClone(currentFormState)
 
     isSubmitting.value = false
   }
@@ -546,7 +552,7 @@ export function useForm<TSchema extends z.ZodType>(
       setValues,
       addErrors,
     }),
-    onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => {
+    onSubmitForm: (cb: (data: z.infer<TSchema>) => MaybePromise<void>) => {
       onSubmitCb = cb
     },
   }
