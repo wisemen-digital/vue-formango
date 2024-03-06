@@ -29,8 +29,8 @@ const exampleForm = z.object({
 const { form, onSubmitForm } = useForm({
   schema: exampleForm,
   initialState: {
-    email: '',
-    name: '',
+    name: 'Foo',
+    email: 'foo@mail.com',
   },
 })
 
