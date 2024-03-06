@@ -1,6 +1,6 @@
 {
   "extends": "@antfu",
-  "ignorePatterns": ["/.vitepress/**/*", "/**/*.svg", "/**/*.css"],
+  "ignorePatterns": ["/docs/.vitepress/**/*", "/docs/**/*.svg", "/docs/**/*.css"],
   "rules": {
     "no-mixed-spaces-and-tabs": "off",
     "no-tabs": "off"
