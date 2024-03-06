@@ -18,7 +18,7 @@ const email = form.register('email')
 ```
 ## Example input
 
-Visit the [best practice page](../guide/best-practices/custom-input.md) to view an example of a custom input consuming the Field API.
+Visit the [best practice page](../best-practices/custom-input.md) to view an example of a custom input consuming the Field API.
 
 
 ### Field object

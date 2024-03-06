@@ -69,5 +69,4 @@ const email = form.register('email')
 </template>
 ```
 
-
-Refer to the [form](/api/useForm), [field](/api/field) and [array field](/api/field-array) API for more details.
+Refer to the [form](https://wisemen-digital.github.io/vue-formango/api/useForm), [field](https://wisemen-digital.github.io/vue-formango/api/field) and [array field](https://wisemen-digital.github.io/vue-formango/api/field-array) API for more details.

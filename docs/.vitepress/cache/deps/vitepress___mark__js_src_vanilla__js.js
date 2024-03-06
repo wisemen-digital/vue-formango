@@ -255,7 +255,7 @@ var DOMIterator = class _DOMIterator {
   }
   /**
    * Creates a NodeIterator on the specified context
-   * @see {@link https://developer.mozilla.org/en/Web/API/NodeIterator}
+   * @see {@link https://developer.mozilla.org/en/docs/Web/API/NodeIterator}
    * @param {HTMLElement} ctx - The context DOM element
    * @param {DOMIterator~whatToShow} whatToShow
    * @param {DOMIterator~filterCb} filter

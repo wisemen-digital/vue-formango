@@ -692,7 +692,7 @@ var createFocusTrap = function createFocusTrap2(elements, userOptions) {
         /** Last tabbable node in container, __tabindex__ order; `undefined` if none. */
         lastTabbableNode,
         // NOTE: DOM order is NOT NECESSARILY "document position" order, but figuring that out
-        //  would require more than just https://developer.mozilla.org/en-US/Web/API/Node/compareDocumentPosition
+        //  would require more than just https://developer.mozilla.org/en-US/docs/Web/API/Node/compareDocumentPosition
         //  because that API doesn't work with Shadow DOM as well as it should (@see
         //  https://github.com/whatwg/dom/issues/320) and since this first/last is only needed, so far,
         //  to address an edge case related to positive tabindex support, this seems like a much easier,

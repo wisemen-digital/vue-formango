@@ -385,7 +385,7 @@ var SearchableMap = (
     };
     Object.defineProperty(SearchableMap2.prototype, "size", {
       /**
-       * @see https://developer.mozilla.org/en-US/Web/JavaScript/Reference/Global_Objects/Map/size
+       * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map/size
        */
       get: function() {
         if (this._size) {
