@@ -2,32 +2,11 @@
 
 Initializes a form from a Zod schema and returns a form object and a onSubmitForm callback function.
 
-## Usage Default
-
-```ts
-import { z } from 'zod'
-import { useForm } from 'formango'
-const exampleSchema = z.object({
-  name: z.string().min(3).max(255),
-})
-
-const {
-  form,
-  onSubmitForm,
-} = useForm(exampleSchema)
-
-onSubmitForm((values) => {
-  console.log(values)
-})
-
-form.register('name', 'default name')
-```
-
 ### Form object
 
 | State           | Type      | Description                                                       |
 | --------------- | --------- | ----------------------------------------------------------------- |
-| errors        | `Object` | Current errors on the form                              |
+| errors        | `ZodFormattedError` | Current errors on the form, refer to Zod                              |
 | hasAttemptedToSubmit    | `Boolean`  | Boolean indicating if the form has been submitted.     |
 | isDirty | `Boolean` | Boolean indicating if the form is currently dirty (does not get set if you enter initial values in the form) |
 | isSubmitting | `Boolean` | Boolean indicating if the form is currently submitting |
@@ -56,14 +35,16 @@ const exampleSchema = z.object({
 const {
   form,
   onSubmitForm,
-} = useForm(exampleSchema,
-  // Optional initial values
+} = useForm(
   {
-    email: '',
-    password: '',
-    name: 'Robbe',
-    emails: [],
-  },
+    schema: exampleSchema,
+    initialData: {
+      email: '',
+      password: '',
+      name: 'Robbe',
+      emails: [],
+    },
+  }
 )
 
 onSubmitForm((values) => {
@@ -84,7 +65,7 @@ onUnmounted(() => {
   form.unregister('email')
 })
 
-// Manually set errors on fields
+// Manually set errors on fields, for example if you get errors from your backend
 form.addErrors({
   email: {
     _errors: ['Invalid email'],
@@ -113,6 +94,133 @@ form.state
 form.submit()
 ```
 
+## Type definitions
+ 
+::: code-group
+
+```ts [UseFormReturnType]
+interface UseFormReturnType<TSchema extends z.ZodType> {
+  /**
+   * Called when the form is valid and submitted.
+   * @param data The current form data.
+   */
+  onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => void
+  /**
+   * The form instance itself.
+   */
+  form: Form<TSchema>
+}
+```
+
+
+```ts [UseFormOptions]
+interface UseFormOptions<TSchema extends z.ZodType> {
+  /**
+   * Zod schema to be parsed
+   */
+  schema: TSchema
+  /**
+   * Initial state that infers the type from the Zod schema
+   */
+  initialState?: z.infer<TSchema>
+}
+```
+
+```ts [Form]
+interface Form<T extends z.ZodType> {
+  /**
+   * The current state of the form.
+   */
+  state: Readonly<DeepPartial<z.infer<T>>>
+  /**
+   * The collection of all registered fields' errors.
+   */
+  errors: z.ZodFormattedError<z.infer<T>>
+  /**
+   * Indicates whether the form is dirty or not.
+   *
+   * A form is considered dirty if any of its fields have been changed.
+   */
+  isDirty: boolean
+  /**
+   * Indicates whether the form is currently submitting or not.
+   */
+  isSubmitting: boolean
+  /**
+   * Indicates whether the form has been attempted to submit.
+   */
+  hasAttemptedToSubmit: boolean
+  /**
+   * Indicates whether the form is currently valid or not.
+   *
+   * A form is considered valid if all of its fields are valid.
+   */
+  isValid: boolean
+  /**
+   * Registers a new form field.
+   *
+   * @returns A `Field` instance that can be used to interact with the field.
+   */
+  register: Register<T>
+  /**
+   * Registers a new form field array.
+   *
+   * @returns A `FieldArray` instance that can be used to interact with the field array.
+   */
+  registerArray: RegisterArray<T>
+  /**
+   * Unregisters a previously registered field.
+   *
+   * @param path The path of the field to unregister.
+   */
+  unregister: Unregister<T>
+  /**
+   * Sets errors in the form.
+   *
+   * @param errors The new errors for the form fields.
+   */
+  addErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
+  /**
+   * Sets values in the form.
+   *
+   * @param values The new values for the form fields.
+   */
+  setValues: (values: DeepPartial<z.infer<T>>) => void
+  /**
+   * Submits the form.
+   *
+   * @returns A promise that resolves once the form has been successfully submitted.
+   */
+  submit: () => Promise<void>
+}
+```
+
+```ts [Register]
+// Returns a Field, read the Field API documentation for more info
+export type Register<TSchema extends z.ZodType> = <
+  TPath extends FieldPath<z.infer<TSchema>>,
+  TValue extends FieldPathValue<z.infer<TSchema>, TPath>,
+  TDefaultValue extends FieldPathValue<z.infer<TSchema>, TPath> | undefined,
+>(field: TPath, defaultValue?: TDefaultValue) => Field<TValue, TDefaultValue>
+```
+
+```ts [RegisterArray]
+// Returns a FieldArray, read the FieldArray API documentation for more info
+export type RegisterArray<TSchema extends z.ZodType> = <
+  TPath extends FieldPath<z.infer<TSchema>>,
+  TValue extends FieldPathValue<z.infer<TSchema>, TPath>,
+  TDefaultValue extends FieldPathValue<z.infer<TSchema>, TPath> | undefined,
+>(field: TPath, defaultValue?: TDefaultValue) => FieldArray<TValue>
+```
+
+```ts [Unregister]
+export type Unregister<T extends z.ZodType> = <
+  P extends FieldPath<z.infer<T>>,
+>(field: P) => void
+```
+
+:::
+
 ## Source
 
-[Source](https://github.com/wouterlms/forms/blob/main/src/composables/useForm.ts) - [Types](https://github.com/wouterlms/forms/blob/main/src/types/form.type.ts)
+[Source](https://github.com/wisemen-digital/vue-formango/blob/main/src/lib/useForm.ts) - [Types](https://github.com/wouterlms/forms/blob/main/src/types/form.type.ts)

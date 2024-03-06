@@ -10,7 +10,7 @@ pnpm i formango
 
 ## Documentation
 
-Refer to the [documentation](https://wouterlms.github.io/forms/) for a more in depth look.
+Refer to the [documentation](https://wisemen-digital.github.io/vue-formango/) for a more in depth look.
 ## Usage Example
 
 ```vue
@@ -26,22 +26,23 @@ const exampleForm = z.object({
 
 // Parse the schema to `useForm` along with a function to handle the submit.
 // Optionally, you can also pass an object to prepare the form.
-const { form } = useForm(exampleForm,
-  // Loads the form with initial data
-  {
-    name: 'Foo',
-    email: 'foo@mail.com',
+const { form, onSubmitForm } = useForm({
+  schema: exampleForm,
+  initialState: {
+    email: '',
+    name: '',
   },
-)
+})
 
 // Now you can register fields on the form, which are fully typed.
 // These fields will handle the actual data-binding
 const name = form.register('name')
+const email = form.register('email')
 </script>
 
 <template>
   <CustomInput v-bind="name" />
-  <CustomInput v-bind="form.register('email')" />
+  <CustomInput v-bind="email" />
 </template>
 ```
 

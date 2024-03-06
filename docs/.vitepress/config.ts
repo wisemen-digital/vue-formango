@@ -7,16 +7,20 @@ const bestPractices = [
 
 const guide = [
   { text: 'Getting started', link: '/guide/' },
-  { text: 'Devtools', link: '/guide/devtools' },
+  // { text: 'Devtools', link: '/guide/devtools' },
 ]
 
 const api = [
   { text: 'useForm', link: '/api/useForm' },
   { text: 'Field', link: '/api/field' },
-  { text: 'Array field', link: '/api/array-field' },
-  { text: 'Types', link: '/api/types' },
+  { text: 'Field array', link: '/api/field-array' },
 ]
 
+
+const examples = [
+  { text: 'Subforms', link: '/examples/subforms' },
+  { text: 'External errors', link: '/examples/external-errors' },
+]
 
 
 // https://vitepress.dev/reference/site-config
@@ -59,6 +63,10 @@ export default defineConfig({
         text: 'API',
         items: api,
       },
+      {
+        text: 'Examples',
+        items: examples,
+      }
     ],
 
     socialLinks: [
