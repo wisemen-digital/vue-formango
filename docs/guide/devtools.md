@@ -8,4 +8,4 @@ Afterwards you will see all the registered forms that are currently active, whic
 
 If you register a field, it will become visible inside the form. You can select individual fields and viewing their details inside the devtools.
 
-![Devtools](assets/devtools.png)
+![Devtools](/assets/devtools.png)
