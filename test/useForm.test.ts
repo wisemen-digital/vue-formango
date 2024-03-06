@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import { useForm } from '../src/lib/useForm'
 
 const basicSchema = z.object({
@@ -84,6 +85,23 @@ describe('useForm', () => {
       })
     })
 
+    it('should register a field with a default value from the initial state', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+        initialState: {
+          name: 'John',
+        },
+      })
+
+      const name = form.register('name')
+
+      expect(name.modelValue).toEqual('John')
+
+      expect(form.state).toEqual({
+        name: 'John',
+      })
+    })
+
     it('should register a nested field', () => {
       const { form } = useForm({
         schema: objectSchema,
@@ -148,75 +166,73 @@ describe('useForm', () => {
       })
     })
 
-    it('should register an array field which has already been registered', () => {
-      const { form } = useForm({
-        schema: basicArraySchema,
-      })
+    it('should register an array field with a default value', () => {
+		  const { form } = useForm({
+		    schema: basicArraySchema,
+		  })
 
-      const array = form.registerArray('array')
+		  const array = form.registerArray('array', ['John'])
 
-      array.append('John')
+		  expect(array.modelValue).toEqual(['John'])
 
-      const array2 = form.registerArray('array')
-
-      expect(array.modelValue).toEqual(['John'])
-      expect(array2.modelValue).toEqual(['John'])
-
-      expect(form.state).toEqual({
-        array: ['John'],
-      })
+		  expect(form.state).toEqual({
+		    array: ['John'],
+		  })
     })
 
-    it('should register an array field with a default value', () => {
+    it('should register an array field with an initial state', () => {
       const { form } = useForm({
-        schema: basicArraySchema,
-      })
+		    schema: basicArraySchema,
+		    initialState: {
+		      array: ['John'],
+		    },
+		  })
 
-      const array = form.registerArray('array', ['John'])
+		  const array = form.registerArray('array')
 
-      expect(array.modelValue).toEqual(['John'])
+		  expect(array.modelValue).toEqual(['John'])
 
-      expect(form.state).toEqual({
-        array: ['John'],
-      })
+		  expect(form.state).toEqual({
+		    array: ['John'],
+		  })
     })
 
     it('should register a nested array field', () => {
-      const { form } = useForm({
-        schema: objectArraySchema,
-      })
+		  const { form } = useForm({
+		    schema: objectArraySchema,
+		  })
 
-      const array0Name = form.register('array.0.name')
+		  const array0Name = form.register('array.0.name')
 
-      expect(array0Name.modelValue).toEqual(null)
+		  expect(array0Name.modelValue).toEqual(null)
 
-      expect(form.state).toEqual({
-        array: [
-          {
-            name: null,
-          },
-        ],
-      })
+		  expect(form.state).toEqual({
+		    array: [
+		      {
+		        name: null,
+		      },
+		    ],
+		  })
     })
 
     it('should register a nested array field with a default value', () => {
-      const { form } = useForm({
-        schema: twoDimensionalArraySchema,
-      })
+		  const { form } = useForm({
+		    schema: twoDimensionalArraySchema,
+		  })
 
-      const name = form.register('array.0.0.name', 'John')
+		  const name = form.register('array.0.0.name', 'John')
 
-      expect(name.modelValue).toEqual('John')
+		  expect(name.modelValue).toEqual('John')
 
-      expect(form.state).toEqual({
-        array: [
-          [
-            {
-              name: 'John',
-            },
-          ],
-        ],
-      })
+		  expect(form.state).toEqual({
+		    array: [
+		      [
+		        {
+		          name: 'John',
+		        },
+		      ],
+		    ],
+		  })
     })
   })
 
@@ -272,6 +288,22 @@ describe('useForm', () => {
             c: null,
           },
         },
+      })
+    })
+
+    it('should register a field from an array field', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const array = form.registerArray('array')
+
+      const array0Name = array.register('0')
+
+      expect(array0Name.modelValue).toEqual(null)
+
+      expect(form.state).toEqual({
+        array: [null],
       })
     })
   })
@@ -462,6 +494,19 @@ describe('useForm', () => {
 
       expect(name.isTouched).toEqual(true)
     })
+
+    it('should be touched when a child field is touched', () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      const b = a.register('b')
+
+      b.onBlur()
+
+      expect(a.isTouched).toEqual(true)
+    })
   })
 
   describe('isChanged', () => {
@@ -513,6 +558,20 @@ describe('useForm', () => {
 
       expect(form.errors).toBeDefined()
       expect(name.errors).toBeDefined()
+    })
+
+    it('should have errors when a nested field is invalid', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      a.register('b')
+
+      await sleep(0)
+
+      expect(a.errors).toBeDefined()
+      expect(form.errors).toBeDefined()
     })
 
     it('should set errors with `addErrors`', () => {
@@ -637,6 +696,31 @@ describe('useForm', () => {
       await form.submit()
 
       expect(submitted).toEqual(false)
+    })
+  })
+
+  describe('reactive initial state', () => {
+    it('should update the state when the initial state is updated', async () => {
+      const initialState = ref({
+        name: 'John',
+      })
+
+      const { form } = useForm({
+        schema: basicSchema,
+        initialState,
+      })
+
+      const name = form.register('name')
+
+      expect(name.modelValue).toEqual('John')
+
+      initialState.value = {
+        name: 'Joe',
+      }
+
+      await sleep(0)
+
+      expect(name.modelValue).toEqual('Joe')
     })
   })
 })

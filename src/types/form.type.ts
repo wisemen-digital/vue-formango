@@ -23,6 +23,10 @@ export interface Field<TValue, TDefaultValue = undefined> {
    */
   _id: string
   /**
+   * Internal flag to track if the field has been touched (blurred).
+   */
+  _isTouched: boolean
+  /**
    * The current value of the field.
    */
   modelValue: TDefaultValue extends undefined ? TValue | null : TValue
@@ -61,7 +65,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
    *
    * @param value The new value of the field.
    */
-  'setValue': (value: TDefaultValue extends undefined ? TValue | null : TValue) => void
+  setValue: (value: TDefaultValue extends undefined ? TValue | null : TValue) => void
   /**
    * Called when the field input is blurred.
    */
@@ -72,16 +76,23 @@ export interface Field<TValue, TDefaultValue = undefined> {
   onChange: () => void
 
   register: <
-    TChildPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
-    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TChildPath> | undefined : never,
+    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+    TChildPath extends FieldPath<TValueAsFieldValues>,
+    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TChildPath> | undefined,
   >(
     path: TChildPath,
     defaultValue?: TChildDefaultValue
-  ) => TValue extends FieldValues ? Field<FieldPathValue<TValue, TChildPath>, any> : never
+  ) => Field<
+    FieldPathValue<TValueAsFieldValues, TChildPath>,
+    TChildDefaultValue
+  >
 
-  registerArray: <TPath extends TValue extends FieldValues ? FieldPath<TValue> : never>(
+  registerArray: <
+    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+    TPath extends FieldPath<TValueAsFieldValues>,
+  >(
     path: TPath
-  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath>> : never
+  ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
 
 /**
@@ -114,6 +125,10 @@ export interface FieldArray<TValue extends any[]> {
    * Indicates whether the field has any errors.
    */
   isValid: boolean
+  /**
+   * Indicates whether the field or any of its children have been touched (blurred).
+   */
+  isTouched: boolean
   /**
    * Indicates whether the field value is different from its initial value.
    */
@@ -170,10 +185,10 @@ export interface FieldArray<TValue extends any[]> {
   ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath>> : never
 }
 
-export type Register<TSchema extends z.ZodType> = <
-  TPath extends FieldPath<z.infer<TSchema>>,
-  TValue extends FieldPathValue<z.infer<TSchema>, TPath>,
-  TDefaultValue extends FieldPathValue<z.infer<TSchema>, TPath> | undefined,
+export type Register<TSchema extends FieldValues> = <
+  TPath extends FieldPath<TSchema>,
+  TValue extends FieldPathValue<TSchema, TPath>,
+  TDefaultValue extends FieldPathValue<TSchema, TPath> | undefined,
 >(field: TPath, defaultValue?: TDefaultValue) => Field<TValue, TDefaultValue>
 
 export type RegisterArray<TSchema extends z.ZodType> = <
@@ -186,7 +201,7 @@ export type Unregister<T extends z.ZodType> = <
   P extends FieldPath<z.infer<T>>,
 >(field: P) => void
 
-export interface Form<T extends z.ZodType> {
+export interface Form<TSchema extends z.ZodType> {
   /**
    * Internal id of the form, to track it in the devtools.
    */
@@ -194,11 +209,11 @@ export interface Form<T extends z.ZodType> {
   /**
    * The current state of the form.
    */
-  state: Readonly<DeepPartial<z.infer<T>>>
+  state: Readonly<DeepPartial<z.infer<TSchema>>>
   /**
    * The collection of all registered fields' errors.
    */
-  errors: z.ZodFormattedError<z.infer<T>>
+  errors: z.ZodFormattedError<z.infer<TSchema>>
   /**
    * Indicates whether the form is dirty or not.
    *
@@ -224,31 +239,31 @@ export interface Form<T extends z.ZodType> {
    *
    * @returns A `Field` instance that can be used to interact with the field.
    */
-  register: Register<T>
+  register: Register<z.infer<TSchema>>
   /**
    * Registers a new form field array.
    *
    * @returns A `FieldArray` instance that can be used to interact with the field array.
    */
-  registerArray: RegisterArray<T>
+  registerArray: RegisterArray<TSchema>
   /**
    * Unregisters a previously registered field.
    *
    * @param path The path of the field to unregister.
    */
-  unregister: Unregister<T>
+  unregister: Unregister<TSchema>
   /**
    * Sets errors in the form.
    *
    * @param errors The new errors for the form fields.
    */
-  addErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<T>>>) => void
+  addErrors: (errors: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>) => void
   /**
    * Sets values in the form.
    *
    * @param values The new values for the form fields.
    */
-  setValues: (values: DeepPartial<z.infer<T>>) => void
+  setValues: (values: DeepPartial<z.infer<TSchema>>) => void
   /**
    * Submits the form.
    *
