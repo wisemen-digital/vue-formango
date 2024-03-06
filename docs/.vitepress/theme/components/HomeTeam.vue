@@ -16,12 +16,11 @@ const members = [
     links: [
       { icon: 'github', link: 'https://github.com/Robbe95' },
       { icon: 'twitter', link: 'https://twitter.com/robbe_vaes' },
-      { icon: 'linkedin', link: 'https://www.linkedin.com/in/robbe-vaes-1841b5116/'}
+      { icon: 'linkedin', link: 'https://www.linkedin.com/in/robbe-vaes-1841b5116/' },
     ],
   },
 
 ]
-
 </script>
 
 <template>

@@ -35,20 +35,21 @@ const exampleForm = z.object({
 
 // Parse the schema to `useForm` along with a function to handle the submit.
 // Optionally, you can also pass an object to prepare the form.
-const { form, onSubmitForm } = useForm(exampleForm,
-  // Loads the form with initial data
-  {
+const { form, onSubmitForm } = useForm({
+  schema: exampleForm,
+  initialState: {
     name: 'Foo',
     email: 'foo@mail.com',
   },
-)
+})
 
 onSubmitForm((values) => {
-  /* Values type is inferred from the schema
-  {
-    email: string
-    name: string
-  }
+  /* Values type is inferred from the schema, hande your submit logic here.
+    Will only get here if the form is fully valid.
+    {
+      email: string
+      name: string
+    }
   */
   console.log(values)
 })
@@ -56,15 +57,16 @@ onSubmitForm((values) => {
 // Now you can register fields on the form, which are fully typed.
 // These fields will handle the actual data-binding
 const name = form.register('name')
+const email = form.register('email')
 </script>
 
 <template>
   <CustomInput v-bind="name" />
-  <CustomInput v-bind="form.register('email')" />
+  <CustomInput v-bind="email" />
   <button @click="form.submit">
     Submit
   </button>
 </template>
 ```
 
-Refer to the [form](/api/useForm), [field](/api/field) and [array field](/api/array-field) API for more details.
+Refer to the [form](https://wisemen-digital.github.io/vue-formango/api/useForm), [field](https://wisemen-digital.github.io/vue-formango/api/field) and [array field](https://wisemen-digital.github.io/vue-formango/api/field-array) API for more details.

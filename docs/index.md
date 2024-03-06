@@ -7,13 +7,13 @@ hero:
   text: "Fastest form development"
   tagline: A juicy, fully typed, Zod-based, light weight, Vue form library
   image:
-    src: /assets/mango_no_shadow.svg
+    src: assets/mango_no_shadow.svg
     alt: Formango
 
   actions:
     - theme: brand
       text: Getting started
-      link: /guide/
+      link: /guide/getting-started
     - theme: alt
       text: API documentation
       link: /api/useForm
