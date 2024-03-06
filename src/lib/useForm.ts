@@ -2,6 +2,7 @@ import type { ComputedRef } from 'vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
 import deepClone from 'deep-clone'
+import { type MaybeRefOrGetter, toValue } from '@vueuse/core'
 import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 
@@ -19,7 +20,7 @@ interface UseFormReturnType<TSchema extends z.ZodType> {
 
 interface UseFormOptions<TSchema extends z.ZodType> {
   schema: TSchema
-  initialState?: NullableKeys<z.infer<TSchema>>
+  initialState?: MaybeRefOrGetter<NullableKeys<z.infer<TSchema>>>
 }
 
 export function useForm<TSchema extends z.ZodType>(
@@ -42,7 +43,7 @@ export function useForm<TSchema extends z.ZodType>(
 
   // The initial state of the form
   // This is used to keep track of whether a field has been modified (isDirty)
-  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState ? deepClone(initialState) : null)
+  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState ? deepClone(toValue(initialState)) : null)
 
   // Tracks all the registered paths (id, path)
   const paths = reactive(new Map<string, string>())
@@ -58,7 +59,7 @@ export function useForm<TSchema extends z.ZodType>(
   const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
 
   if (initialState != null)
-    Object.assign(form, deepClone(initialState))
+    Object.assign(form, deepClone(toValue(initialState)))
 
   const isDirty = computed<boolean>(() => {
     return [
@@ -68,6 +69,15 @@ export function useForm<TSchema extends z.ZodType>(
   })
 
   const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
+
+  watch(() => initialState, (newInitialState) => {
+    if (!isDirty.value && newInitialState != null) {
+      initialFormState.value = deepClone(toValue(newInitialState))
+      Object.assign(form, deepClone(toValue(newInitialState)))
+    }
+  }, {
+    deep: true,
+  })
 
   const getIdByPath = (
     paths: Map<string, string>,
@@ -122,6 +132,15 @@ export function useForm<TSchema extends z.ZodType>(
     }
   }
 
+  const getChildPaths = (path: string): (Field<any, any> | FieldArray<any>)[] => {
+    return [
+      ...registeredFields.values(),
+      ...registeredFieldArrays.values(),
+    ].filter((field) => {
+      return field._path.startsWith(path) && field._path !== path
+    })
+  }
+
   const createField = (
     id: string,
     path: string,
@@ -131,6 +150,7 @@ export function useForm<TSchema extends z.ZodType>(
       '_id': id,
       '_path': path,
       'isValid': false,
+      '_isTouched': false,
       'isDirty': false,
       'isTouched': false,
       'isChanged': false,
@@ -140,7 +160,7 @@ export function useForm<TSchema extends z.ZodType>(
         set(form, path, newValue)
       },
       'onBlur': () => {
-        field.isTouched = true
+        field._isTouched = true
       },
       'onChange': () => {
         field.isChanged = true
@@ -262,6 +282,7 @@ export function useForm<TSchema extends z.ZodType>(
       _path: path,
       isValid: false,
       isDirty: false,
+      isTouched: false,
       modelValue: defaultOrExistingValue,
       errors: undefined,
       append,
@@ -289,6 +310,10 @@ export function useForm<TSchema extends z.ZodType>(
     })
 
     return fieldArray
+  }
+
+  const isField = (field: Field<any, any> | FieldArray<any>): field is Field<any, any> => {
+    return (field as Field<any, any>)._isTouched !== undefined
   }
 
   const getFieldWithTrackedDepencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
@@ -321,6 +346,20 @@ export function useForm<TSchema extends z.ZodType>(
         return false
 
       return JSON.stringify(field.modelValue) !== JSON.stringify(initialValue)
+    }) as unknown as boolean
+
+    field.isTouched = computed<boolean>(() => {
+      const children = getChildPaths(field._path)
+
+      const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
+
+      if (areAnyOfItsChildrenTouched)
+        return true
+
+      if (isField(field))
+        return field._isTouched
+
+      return false
     }) as unknown as boolean
 
     field.errors = computed<z.ZodFormattedError<TSchema>>(() => {

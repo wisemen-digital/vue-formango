@@ -23,6 +23,10 @@ export interface Field<TValue, TDefaultValue = undefined> {
    */
   _id: string
   /**
+   * Internal flag to track if the field has been touched (blurred).
+   */
+  _isTouched: boolean
+  /**
    * The current value of the field.
    */
   modelValue: TDefaultValue extends undefined ? TValue | null : TValue
@@ -72,9 +76,9 @@ export interface Field<TValue, TDefaultValue = undefined> {
   onChange: () => void
 
   register: <
-		TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
-		TChildPath extends FieldPath<TValueAsFieldValues>,
-		TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TChildPath> | undefined,
+    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+    TChildPath extends FieldPath<TValueAsFieldValues>,
+    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TChildPath> | undefined,
   >(
     path: TChildPath,
     defaultValue?: TChildDefaultValue
@@ -84,9 +88,9 @@ export interface Field<TValue, TDefaultValue = undefined> {
   >
 
   registerArray: <
-		TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
-		TPath extends FieldPath<TValueAsFieldValues>,
-	>(
+    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+    TPath extends FieldPath<TValueAsFieldValues>,
+  >(
     path: TPath
   ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
@@ -121,6 +125,10 @@ export interface FieldArray<TValue extends any[]> {
    * Indicates whether the field has any errors.
    */
   isValid: boolean
+  /**
+   * Indicates whether the field or any of its children have been touched (blurred).
+   */
+  isTouched: boolean
   /**
    * Indicates whether the field value is different from its initial value.
    */

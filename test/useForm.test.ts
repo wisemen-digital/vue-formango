@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import { useForm } from '../src/lib/useForm'
 
 const basicSchema = z.object({
@@ -493,6 +494,19 @@ describe('useForm', () => {
 
       expect(name.isTouched).toEqual(true)
     })
+
+    it('should be touched when a child field is touched', () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      const b = a.register('b')
+
+      b.onBlur()
+
+      expect(a.isTouched).toEqual(true)
+    })
   })
 
   describe('isChanged', () => {
@@ -544,6 +558,20 @@ describe('useForm', () => {
 
       expect(form.errors).toBeDefined()
       expect(name.errors).toBeDefined()
+    })
+
+    it('should have errors when a nested field is invalid', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      a.register('b')
+
+      await sleep(0)
+
+      expect(a.errors).toBeDefined()
+      expect(form.errors).toBeDefined()
     })
 
     it('should set errors with `addErrors`', () => {
@@ -668,6 +696,31 @@ describe('useForm', () => {
       await form.submit()
 
       expect(submitted).toEqual(false)
+    })
+  })
+
+  describe('reactive initial state', () => {
+    it('should update the state when the initial state is updated', async () => {
+      const initialState = ref({
+        name: 'John',
+      })
+
+      const { form } = useForm({
+        schema: basicSchema,
+        initialState,
+      })
+
+      const name = form.register('name')
+
+      expect(name.modelValue).toEqual('John')
+
+      initialState.value = {
+        name: 'Joe',
+      }
+
+      await sleep(0)
+
+      expect(name.modelValue).toEqual('Joe')
     })
   })
 })
