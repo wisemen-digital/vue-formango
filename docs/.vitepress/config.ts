@@ -69,6 +69,11 @@ export default defineConfig({
         text: 'Changelog',
         link: '/CHANGELOG',
       },
+      {
+        text: 'Playground',
+        link: '/playground',
+      },
+
 
     ],
 
