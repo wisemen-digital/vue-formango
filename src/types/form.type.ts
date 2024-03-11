@@ -17,7 +17,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: string | null
   /**
    * The unique id of the field.
    */
@@ -104,7 +104,7 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: string | null
   /**
    * The unique id of the field.
    */

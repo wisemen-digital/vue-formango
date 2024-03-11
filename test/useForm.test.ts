@@ -236,6 +236,103 @@ describe('useForm', () => {
     })
   })
 
+  describe('unregister a field or fieldArray', () => {
+    it('should unregister a field', () => {
+      const { form } = useForm({
+        schema: basicSchema,
+      })
+
+      form.register('name', 'John')
+      form.unregister('name')
+
+      expect(form.state).toEqual({})
+    })
+
+    it('should register a field on the same index after unregistering', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const array = form.registerArray('array')
+      array.append('John')
+      array.register('0')
+
+      array.remove(0)
+
+      array.append('Doe')
+
+      array.register('0')
+
+      expect(form.state).toEqual({
+        array: ['Doe'],
+      })
+    })
+
+    it('should unregister an array index', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const array = form.registerArray('array')
+      array.append('John')
+
+      array.remove(0)
+
+      expect(form.state).toEqual({
+        array: [],
+      })
+
+      array.append('Doe')
+
+      expect(form.state).toEqual({
+        array: ['Doe'],
+      })
+
+      form.unregister('array.0')
+    })
+
+    it('should unregister an array index with a subfield', () => {
+      const { form } = useForm({
+        schema: z.object({
+          questions: z.object({
+            choices: z.object({
+              text: z.string(),
+            }).array(),
+          }).array(),
+        }),
+      })
+
+      const questions = form.registerArray('questions')
+
+      questions.append()
+
+      const question0 = form.register('questions.0')
+
+      const choices = question0.registerArray('choices')
+      choices.append()
+
+      const choice = form.register('questions.0.choices.0')
+
+      choice.register('text')
+
+      choices.remove(0)
+
+      // const choices = form.registerArray('choices')
+
+      // choices.append()
+
+      // const choice = form.register('choices.0')
+
+      // choice.register('text')
+
+      // choices.remove(0)
+
+      // expect(form.state).toEqual({
+      //   choices: [],
+      // })
+    })
+  })
+
   describe('register a field from a field or fieldArray', () => {
     it('should register a field from a field', () => {
       const { form } = useForm({

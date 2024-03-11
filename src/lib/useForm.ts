@@ -137,7 +137,7 @@ export function useForm<TSchema extends z.ZodType>(
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
     ].filter((field) => {
-      return field._path.startsWith(path) && field._path !== path
+      return field._path?.startsWith(path) && field._path !== path
     })
   }
 
@@ -322,24 +322,30 @@ export function useForm<TSchema extends z.ZodType>(
   ): TFieldArray => {
     const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
 
-    field._path = computed<string>(() => {
+    field._path = computed<string | null>(() => {
       const path = paths.get(field._id) ?? null
 
-      if (path === null)
-        throw new Error('Path not found')
-
       return path
-    }) as unknown as string
+    }) as unknown as string | null
 
     field.modelValue = computed<unknown>(() => {
+      if (field._path === null)
+        return null
+
       return get(form, field._path)
     })
 
     field.isValid = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       return get(errors.value, field._path) === undefined
     }) as unknown as boolean
 
     field.isDirty = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       const initialValue = get(initialFormState.value, field._path) ?? parsedStringifiedInitialValue
 
       if (field.modelValue === '' && initialValue === null)
@@ -349,6 +355,9 @@ export function useForm<TSchema extends z.ZodType>(
     }) as unknown as boolean
 
     field.isTouched = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       const children = getChildPaths(field._path)
 
       const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
@@ -363,6 +372,9 @@ export function useForm<TSchema extends z.ZodType>(
     }) as unknown as boolean
 
     field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
+      if (field._path === null)
+        return {}
+
       return get(errors.value, field._path)
     }) as unknown as z.ZodFormattedError<TSchema>
 
