@@ -157,7 +157,7 @@ export function useForm<TSchema extends z.ZodType>(
       'modelValue': defaultOrExistingValue,
       'errors': undefined,
       'onUpdate:modelValue': (newValue) => {
-        set(form, path, newValue)
+        set(form, field._path as string, newValue)
       },
       'onBlur': () => {
         field._isTouched = true
