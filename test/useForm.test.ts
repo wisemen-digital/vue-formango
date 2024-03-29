@@ -368,6 +368,21 @@ describe('useForm', () => {
       })
     })
 
+    it('should register a fieldArray with a default value from a field', async () => {
+      const { form } = useForm({
+        schema: z.object({
+          obj: z.object({
+            array: z.array(z.string()),
+          }),
+        }),
+      })
+
+      const obj = form.register('obj')
+      const array = obj.registerArray('array', ['John'])
+
+      expect(array.modelValue).toEqual(['John'])
+    })
+
     it('should register a field from a field which has been registered from a field', () => {
       const { form } = useForm({
         schema: objectSchema,
@@ -401,6 +416,46 @@ describe('useForm', () => {
 
       expect(form.state).toEqual({
         array: [null],
+      })
+    })
+  })
+
+  describe('array field modifiers', () => {
+    it('should move a field in an array', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const array = form.registerArray('array')
+
+      array.append('John')
+      array.append('Doe')
+
+      array.move(1, 0)
+
+      expect(form.state).toEqual({
+        array: ['Doe', 'John'],
+      })
+    })
+
+    it('shoud move a field in an array and back', async () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const array = form.registerArray('array')
+
+      array.append('John')
+      array.append()
+
+      array.move(1, 0)
+
+      await sleep(0)
+
+      array.move(0, 1)
+
+      expect(form.state).toEqual({
+        array: ['John', null],
       })
     })
   })

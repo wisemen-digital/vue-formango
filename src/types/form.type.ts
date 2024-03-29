@@ -90,8 +90,10 @@ export interface Field<TValue, TDefaultValue = undefined> {
   registerArray: <
     TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
     TPath extends FieldPath<TValueAsFieldValues>,
+    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
   >(
-    path: TPath
+    path: TPath,
+    defaultValue?: TChildDefaultValue,
   ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
 
