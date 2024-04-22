@@ -142,7 +142,7 @@ export function useForm<TSchema extends z.ZodType>(
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
     ].filter((field) => {
-      return field._path.startsWith(path) && field._path !== path
+      return field._path?.startsWith(path) && field._path !== path
     })
   }
 
@@ -162,7 +162,7 @@ export function useForm<TSchema extends z.ZodType>(
       'modelValue': defaultOrExistingValue,
       'errors': undefined,
       'onUpdate:modelValue': (newValue) => {
-        set(form, path, newValue)
+        set(form, field._path as string, newValue)
       },
       'onBlur': () => {
         field._isTouched = true
@@ -174,16 +174,19 @@ export function useForm<TSchema extends z.ZodType>(
         field['onUpdate:modelValue'](newValue)
       },
       'register': (childPath, defaultValue) => {
-        const fullPath = `${path}.${childPath}` as Path<TSchema>
+        const currentPath = paths.get(id) as string
+        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
-      'registerArray': (childPath) => {
-        const fullPath = `${path}.${childPath}` as Path<TSchema>
+      'registerArray': (childPath, defaultValue) => {
+        const currentPath = paths.get(id) as string
+
+        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return registerArray(fullPath) as FieldArray<any>
+        return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
     })
 
@@ -203,6 +206,8 @@ export function useForm<TSchema extends z.ZodType>(
     }
 
     const insert = (index: number, value: unknown) => {
+      const path = paths.get(id) as string
+
       fields[index] = generateId()
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       register(`${path}.${index}` as Path<TSchema>, value as any)
@@ -301,13 +306,16 @@ export function useForm<TSchema extends z.ZodType>(
       empty,
       setValue,
       register: (childPath, defaultValue) => {
-        const fullPath = `${path}.${childPath}` as Path<TSchema>
+        const currentPath = paths.get(id) as string
+        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
       registerArray: (childPath) => {
-        const fullPath = `${path}.${childPath}` as Path<TSchema>
+        const currentPath = paths.get(id) as string
+
+        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return registerArray(fullPath) as FieldArray<any>
@@ -327,24 +335,30 @@ export function useForm<TSchema extends z.ZodType>(
   ): TFieldArray => {
     const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
 
-    field._path = computed<string>(() => {
+    field._path = computed<string | null>(() => {
       const path = paths.get(field._id) ?? null
 
-      if (path === null)
-        throw new Error('Path not found')
-
       return path
-    }) as unknown as string
+    }) as unknown as string | null
 
     field.modelValue = computed<unknown>(() => {
+      if (field._path === null)
+        return null
+
       return get(form, field._path)
     })
 
     field.isValid = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       return get(errors.value, field._path) === undefined
     }) as unknown as boolean
 
     field.isDirty = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       const initialValue = get(initialFormState.value, field._path) ?? parsedStringifiedInitialValue
 
       if (field.modelValue === '' && initialValue === null)
@@ -354,6 +368,9 @@ export function useForm<TSchema extends z.ZodType>(
     }) as unknown as boolean
 
     field.isTouched = computed<boolean>(() => {
+      if (field._path === null)
+        return false
+
       const children = getChildPaths(field._path)
 
       const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
@@ -368,6 +385,9 @@ export function useForm<TSchema extends z.ZodType>(
     }) as unknown as boolean
 
     field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
+      if (field._path === null)
+        return {}
+
       return get(errors.value, field._path)
     }) as unknown as z.ZodFormattedError<TSchema>
 
@@ -392,8 +412,10 @@ export function useForm<TSchema extends z.ZodType>(
   const register: Register<TSchema> = (path, defaultValue) => {
     const existingId = getIdByPath(paths, path)
 
+    const clonedDefaultValue = deepClone(defaultValue)
+
     // Check if the field is already registered
-    if (existingId) {
+    if (existingId !== null) {
       const field = registeredFields.get(existingId) ?? null
 
       if (field === null)
@@ -406,7 +428,7 @@ export function useForm<TSchema extends z.ZodType>(
         return field
 
       // If it isn't being tracked anymore, retrack it
-      return getFieldWithTrackedDepencies(field, defaultValue ?? null)
+      return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
     }
 
     // If it isn't registered, register it
@@ -416,7 +438,7 @@ export function useForm<TSchema extends z.ZodType>(
 
     // If the value is undefined, set it to the default value
     if (value == null)
-      set(form, path, defaultValue ?? null)
+      set(form, path, clonedDefaultValue ?? null)
 
     const id = generateId()
 
@@ -434,11 +456,12 @@ export function useForm<TSchema extends z.ZodType>(
     registerParentPaths(path)
 
     // Track the field
-    return getFieldWithTrackedDepencies(field, defaultValue ?? null)
+    return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
   }
 
   const registerArray: RegisterArray<TSchema> = (path, defaultValue) => {
     const existingId = getIdByPath(paths, path)
+    const clonedDefaultValue = deepClone(defaultValue)
 
     // Check if the field is already registered
     if (existingId !== null) {
@@ -475,8 +498,8 @@ export function useForm<TSchema extends z.ZodType>(
     const fieldArray = createFieldArray(id, path, value ?? [])
 
     // If a default value is set, register each key
-    if (defaultValue !== undefined) {
-      const defaultValueAsArray = defaultValue as unknown[]
+    if (clonedDefaultValue !== undefined) {
+      const defaultValueAsArray = clonedDefaultValue as unknown[]
 
       defaultValueAsArray.forEach((value) => {
         fieldArray.append(value)
