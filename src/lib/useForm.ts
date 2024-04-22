@@ -1,8 +1,7 @@
-import type { ComputedRef } from 'vue'
-import { computed, reactive, ref, watch } from 'vue'
+import type { ComputedRef, MaybeRefOrGetter, UnwrapRef } from 'vue'
+import { computed, reactive, ref, toValue, watch } from 'vue'
 import { z } from 'zod'
 import deepClone from 'deep-clone'
-import { type MaybeRefOrGetter, toValue } from '@vueuse/core'
 import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 
@@ -28,11 +27,10 @@ export function useForm<TSchema extends z.ZodType>(
     schema,
     initialState,
   }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
-
   // Generate a unique id for the form
   // Used in devtools
   const formId = generateId()
-  
+
   // The current state of the form
   // When a field is registered, it will be added to this object
   // The form will only be submitted if this state matches the schema
@@ -361,6 +359,13 @@ export function useForm<TSchema extends z.ZodType>(
 
       const initialValue = get(initialFormState.value, field._path) ?? parsedStringifiedInitialValue
 
+      // if (field.modelValue instanceof File) {
+      //   const currentFile = field.modelValue
+      //   const initialFile = initialValue as File | null
+
+      //   return currentFile.name !== initialFile?.name
+      // }
+
       if (field.modelValue === '' && initialValue === null)
         return false
 
@@ -498,7 +503,10 @@ export function useForm<TSchema extends z.ZodType>(
     const fieldArray = createFieldArray(id, path, value ?? [])
 
     // If a default value is set, register each key
-    if (clonedDefaultValue !== undefined) {
+    // If a value already exists, we don't want to overwrite it
+    const shouldSetDefaultValue = clonedDefaultValue !== undefined && (value == null || value.length === 0)
+
+    if (shouldSetDefaultValue) {
       const defaultValueAsArray = clonedDefaultValue as unknown[]
 
       defaultValueAsArray.forEach((value) => {
@@ -521,11 +529,12 @@ export function useForm<TSchema extends z.ZodType>(
   const unregister: Unregister<TSchema> = (path) => {
     const id = getIdByPath(paths, path)
 
+    unset(form, path)
+
     if (id === null)
-      throw new Error(`Could not unregister ${path} because it does not exist. This might be because it was never registered or because it was already unregistered.`)
+      return
 
     updatePaths(path)
-    unset(form, path)
 
     registeredFields.delete(id)
     trackedDepencies.delete(id)
@@ -586,18 +595,21 @@ export function useForm<TSchema extends z.ZodType>(
       }
     }
 
-    mergeErrors(errors.value, err)
+    mergeErrors(
+      errors.value as DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
+      err,
+    )
   }
 
   watch(form, async () => {
     try {
       await schema.parseAsync(form)
 
-      errors.value = {}
+      errors.value = {} as UnwrapRef<z.ZodFormattedError<z.infer<TSchema>>>
     }
     catch (e) {
       if (e instanceof z.ZodError)
-        errors.value = e.format()
+        errors.value = e.format() as UnwrapRef<z.ZodFormattedError<z.infer<TSchema>>>
     }
   }, {
     deep: true,
@@ -605,10 +617,9 @@ export function useForm<TSchema extends z.ZodType>(
   })
 
   return {
-    form: reactive<Form<TSchema>>({
-      _id: formId,
-      state: form,
-      errors: errors as z.ZodFormattedError<z.infer<TSchema>>,
+    form: reactive<any>({
+      state: form as DeepPartial<z.infer<TSchema>>,
+      errors: errors as unknown as z.ZodFormattedError<z.infer<TSchema>>,
       isDirty: isDirty as unknown as boolean,
       isValid: isValid as unknown as boolean,
       isSubmitting: isSubmitting as unknown as boolean,

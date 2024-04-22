@@ -57,7 +57,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
    *
    * @param value The new value of the field.
    */
-  'onUpdate:modelValue': (value: TValue) => void
+  'onUpdate:modelValue': (value: TValue | null) => void
   /**
    * Sets the current value of the field.
    *
@@ -65,7 +65,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
    *
    * @param value The new value of the field.
    */
-  setValue: (value: TDefaultValue extends undefined ? TValue | null : TValue) => void
+  setValue: (value: TValue | null) => void
   /**
    * Called when the field input is blurred.
    */

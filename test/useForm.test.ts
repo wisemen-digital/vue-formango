@@ -418,6 +418,30 @@ describe('useForm', () => {
         array: [null],
       })
     })
+
+    // Bug report:
+    // When an object array is registered with a default value, and its children are not registered
+    // It's not possible to remove an array index
+
+    it('should be possible to modify a field array without registering its children', () => {
+      const { form } = useForm({
+        schema: objectArraySchema,
+        initialState: {
+          array: [
+            { name: 'John' },
+            { name: 'Doe' },
+          ],
+        },
+      })
+
+      const array = form.registerArray('array')
+
+      array.remove(1)
+
+      expect(form.state).toEqual({
+        array: [{ name: 'John' }],
+      })
+    })
   })
 
   describe('array field modifiers', () => {
