@@ -44,7 +44,6 @@
   "dependencies": {
     "@vue/devtools-api": "^6.5.0",
     "deep-clone": "^4.0.0",
-    "formango": "link:",
     "zod": "^3.21.4"
   },
   "devDependencies": {
