@@ -6,7 +6,7 @@ import type {
 import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
-import { getCurrentInstance, nextTick, onUnmounted, ref } from 'vue'
+import { getCurrentInstance, nextTick, onUnmounted, ref, watch } from 'vue'
 import type { Field, Form } from '../types'
 import type { EncodedNode, FieldNode, FormNode, ObjectWithPossiblyFieldRecursive } from '../types/devtools.type'
 import { throttle } from '../utils'
@@ -136,33 +136,23 @@ export const refreshInspector = throttle(() => {
   }, 100)
 }, 100)
 
-let interval: ReturnType<typeof setInterval> | null = null
-const removeRefreshInterval = () => {
-  if (interval)
-    clearInterval(interval)
-  interval = null
-}
-const setRefreshInterval = () => {
-  removeRefreshInterval()
-  interval = setInterval(() => {
-    refreshInspector()
-  }, 1500)
-}
+const isDevMode = process.env.NODE_ENV === 'development'
 
 function installDevtoolsPlugin(app: App) {
-  if (process.env.NODE_ENV === 'development') {
-    setupDevtoolsPlugin(
-      {
-        id: 'formango-devtools-plugin',
-        label: 'Formango Plugin',
-        packageName: 'formango',
-        homepage: 'https://github.com/wouterlms/forms',
-        app,
-        logo: 'https://ca.slack-edge.com/T060KMU2G-U01EJUUGLN9-b30972b08900-512',
-      },
-      setupApiHooks,
-    )
-  }
+  if (!isDevMode)
+    return
+
+  setupDevtoolsPlugin(
+    {
+      id: 'formango-devtools-plugin',
+      label: 'Formango Plugin',
+      packageName: 'formango',
+      homepage: 'https://github.com/wisemen-digital/vue-formango',
+      app,
+      logo: 'https://wisemen-digital.github.io/vue-formango/assets/mango_no_shadow.svg',
+    },
+    setupApiHooks,
+  )
 }
 
 function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
@@ -175,38 +165,30 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
     noSelectionText: 'Select a form node to inspect',
   })
 
-  api.on.getInspectorTree((payload, ctx) => {
+  api.on.getInspectorTree((payload) => {
     if (payload.inspectorId !== INSPECTOR_ID)
       return
 
-    if (ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`) {
-      removeRefreshInterval()
-      return
-    }
-    setRefreshInterval()
     const calculatedNodes = calculateNodes()
     payload.rootNodes = calculatedNodes
   })
 
-  api.on.getInspectorState((payload, ctx) => {
+  api.on.getInspectorState((payload) => {
     if (payload.inspectorId !== INSPECTOR_ID)
       return
 
-    if (ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`) {
-      removeRefreshInterval()
-      return
-    }
-    setRefreshInterval()
     const decodedNode = decodeNodeId(payload.nodeId)
     if (decodedNode?.type === 'form' && decodedNode?.form)
       payload.state = buildFormState(decodedNode.form)
     else if (decodedNode?.type === 'field' && decodedNode?.field?.field)
       payload.state = buildFieldState(decodedNode?.field.field)
   })
-  setRefreshInterval()
 }
 
 const installPlugin = () => {
+  if (!isDevMode)
+    return
+
   const vm = getCurrentInstance()
   if (!IS_INSTALLED) {
     IS_INSTALLED = true
@@ -218,12 +200,18 @@ const installPlugin = () => {
 }
 
 export function registerFormWithDevTools(form: Form<any>, name?: string) {
+  if (!isDevMode)
+    return
+
   installPlugin()
   if (!form?._id)
     return
 
+  // get component name from the instance
+  const componentName = getCurrentInstance()?.type.__name
+
   const encodedForm = encodeNodeId({ type: 'form', id: form._id, name: name ?? 'Unknown form' })
-  DEVTOOLS_FORMS.value[encodedForm] = { name: name ?? 'Unknown form', form }
+  DEVTOOLS_FORMS.value[encodedForm] = { name: componentName ?? 'Unknown form', form }
   onUnmounted(() => {
     const formFields = Object.keys(DEVTOOLS_FIELDS.value).filter((fieldId: string) => {
       const field = DEVTOOLS_FIELDS.value[fieldId]
@@ -233,23 +221,26 @@ export function registerFormWithDevTools(form: Form<any>, name?: string) {
     formFields.forEach((formFieldId: string) => {
       delete DEVTOOLS_FIELDS.value[formFieldId]
     })
-    refreshInspector()
   })
-  refreshInspector()
 }
 
 export function registerFieldWithDevTools(formId: string, field: Field<any, any>) {
+  if (!isDevMode)
+    return
+
   installPlugin()
   const encodedField = encodeNodeId({ type: 'field', id: field._id })
   DEVTOOLS_FIELDS.value[encodedField] = {
     formId,
     field,
   }
-  refreshInspector()
 }
 
-export const unregisterFieldWithDevTools = (field: Field<any, any>) => {
-  const encodedField = encodeNodeId({ type: 'field', id: field._id })
+export const unregisterFieldWithDevTools = (fieldId: string) => {
+  if (!isDevMode)
+    return
+
+  const encodedField = encodeNodeId({ type: 'field', id: fieldId })
   delete DEVTOOLS_FIELDS.value[encodedField]
 }
 
@@ -281,3 +272,6 @@ function decodeNodeId(nodeId: string): FormNode | FieldNode | null {
   }
   return null
 }
+
+if (isDevMode)
+  watch([DEVTOOLS_FORMS.value, DEVTOOLS_FIELDS.value], refreshInspector, { deep: true })
