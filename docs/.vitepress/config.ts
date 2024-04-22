@@ -7,7 +7,7 @@ const bestPractices = [
 
 const guide = [
   { text: 'Getting started', link: '/guide/getting-started' },
-  // { text: 'Devtools', link: '/guide/devtools' },
+  { text: 'Devtools', link: '/guide/devtools' },
 ]
 
 const api = [

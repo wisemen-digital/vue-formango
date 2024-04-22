@@ -4,6 +4,7 @@ import { z } from 'zod'
 import deepClone from 'deep-clone'
 import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
+import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
 interface UseFormReturnType<TSchema extends z.ZodType> {
   /**
@@ -27,6 +28,10 @@ export function useForm<TSchema extends z.ZodType>(
     schema,
     initialState,
   }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
+  // Generate a unique id for the form
+  // Used in devtools
+  const formId = generateId()
+
   // The current state of the form
   // When a field is registered, it will be added to this object
   // The form will only be submitted if this state matches the schema
@@ -455,6 +460,7 @@ export function useForm<TSchema extends z.ZodType>(
     // So e.g. if we register `array.0.foo`, we also need to register `array.0`
     // It should work for nested arrays. So e.g. `array.0.test.0.foo` should also register `array.0.test.0`
     registerParentPaths(path)
+    registerFieldWithDevTools(formId, field)
 
     // Track the field
     return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
@@ -535,6 +541,7 @@ export function useForm<TSchema extends z.ZodType>(
     registeredFields.delete(id)
     trackedDepencies.delete(id)
     paths.delete(id)
+    unregisterFieldWithDevTools(id)
   }
 
   const blurAll = (): void => {
@@ -612,21 +619,26 @@ export function useForm<TSchema extends z.ZodType>(
     immediate: true,
   })
 
+  const formObject = reactive<any>({
+    _id: formId,
+    state: form as DeepPartial<z.infer<TSchema>>,
+    errors: errors as unknown as z.ZodFormattedError<z.infer<TSchema>>,
+    isDirty: isDirty as unknown as boolean,
+    isValid: isValid as unknown as boolean,
+    isSubmitting: isSubmitting as unknown as boolean,
+    hasAttemptedToSubmit: hasAttemptedToSubmit as unknown as boolean,
+    register,
+    registerArray,
+    unregister,
+    submit,
+    setValues,
+    addErrors,
+  })
+
+  registerFormWithDevTools(formObject)
+
   return {
-    form: reactive<any>({
-      state: form as DeepPartial<z.infer<TSchema>>,
-      errors: errors as unknown as z.ZodFormattedError<z.infer<TSchema>>,
-      isDirty: isDirty as unknown as boolean,
-      isValid: isValid as unknown as boolean,
-      isSubmitting: isSubmitting as unknown as boolean,
-      hasAttemptedToSubmit: hasAttemptedToSubmit as unknown as boolean,
-      register,
-      registerArray,
-      unregister,
-      submit,
-      setValues,
-      addErrors,
-    }),
+    form: formObject,
     onSubmitForm: (cb: (data: z.infer<TSchema>) => MaybePromise<void>) => {
       onSubmitCb = cb
     },
