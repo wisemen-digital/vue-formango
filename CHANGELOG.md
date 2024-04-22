@@ -1,5 +1,11 @@
 # Formango
 
+## 2.0.25
+
+### Major changes
+
+- Reimplemented vue devtools
+
 ## 2.0.0
 
 ### Major Changes
