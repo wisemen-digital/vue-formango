@@ -28,6 +28,11 @@ export function useForm<TSchema extends z.ZodType>(
     schema,
     initialState,
   }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
+
+  // Generate a unique id for the form
+  // Used in devtools
+  const formId = generateId()
+  
   // The current state of the form
   // When a field is registered, it will be added to this object
   // The form will only be submitted if this state matches the schema
@@ -578,6 +583,7 @@ export function useForm<TSchema extends z.ZodType>(
 
   return {
     form: reactive<Form<TSchema>>({
+      _id: formId,
       state: form,
       errors: errors as z.ZodFormattedError<z.infer<TSchema>>,
       isDirty: isDirty as unknown as boolean,
