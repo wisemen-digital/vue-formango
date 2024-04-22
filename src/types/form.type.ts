@@ -17,7 +17,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: string | null
   /**
    * The unique id of the field.
    */
@@ -57,7 +57,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
    *
    * @param value The new value of the field.
    */
-  'onUpdate:modelValue': (value: TValue) => void
+  'onUpdate:modelValue': (value: TValue | null) => void
   /**
    * Sets the current value of the field.
    *
@@ -65,7 +65,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
    *
    * @param value The new value of the field.
    */
-  setValue: (value: TDefaultValue extends undefined ? TValue | null : TValue) => void
+  setValue: (value: TValue | null) => void
   /**
    * Called when the field input is blurred.
    */
@@ -90,8 +90,10 @@ export interface Field<TValue, TDefaultValue = undefined> {
   registerArray: <
     TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
     TPath extends FieldPath<TValueAsFieldValues>,
+    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
   >(
-    path: TPath
+    path: TPath,
+    defaultValue?: TChildDefaultValue,
   ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
 
@@ -104,7 +106,7 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: string | null
   /**
    * The unique id of the field.
    */
