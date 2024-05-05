@@ -13,6 +13,11 @@ interface UseFormReturnType<TSchema extends z.ZodType> {
    */
   onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => void
   /**
+   * Called when the form is attempted to be submitted, but is invalid.
+   * Only called for client-side validation.
+   */
+  onSubmitFormError: (cb: () => void) => void
+  /**
    * The form instance itself.
    */
   form: Form<TSchema>
@@ -53,6 +58,7 @@ export function useForm<TSchema extends z.ZodType>(
   const errors = ref<z.ZodFormattedError<TSchema>>({} as z.ZodFormattedError<TSchema>)
 
   let onSubmitCb: ((data: z.infer<TSchema>) => MaybePromise<void>) | null = null
+  let onSubmitFormErrorCb: (() => void) | undefined
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
@@ -567,7 +573,7 @@ export function useForm<TSchema extends z.ZodType>(
     blurAll()
 
     if (!isValid.value) {
-      onSubmitError?.()
+      onSubmitFormErrorCb?.()
       return
     }
 
@@ -655,6 +661,9 @@ export function useForm<TSchema extends z.ZodType>(
     form: formObject,
     onSubmitForm: (cb: (data: z.infer<TSchema>) => MaybePromise<void>) => {
       onSubmitCb = cb
+    },
+    onSubmitFormError: (cb: () => void) => {
+      onSubmitFormErrorCb = cb
     },
   }
 }

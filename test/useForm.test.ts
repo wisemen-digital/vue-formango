@@ -877,11 +877,12 @@ describe('useForm', () => {
     it('should call `onSubmitError` if there are errors', async () => {
       let isCalled = false
 
-      const { form } = useForm({
+      const { form, onSubmitFormError } = useForm({
         schema: basicSchema,
-        onSubmitError: () => {
-          isCalled = true
-        },
+      })
+
+      onSubmitFormError(() => {
+        isCalled = true
       })
 
       form.register('name', 'Jon')
