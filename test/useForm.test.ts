@@ -873,6 +873,24 @@ describe('useForm', () => {
 
       expect(submitted).toEqual(false)
     })
+
+    it('should call `onSubmitError` if there are errors', async () => {
+      let isCalled = false
+
+      const { form } = useForm({
+        schema: basicSchema,
+        onSubmitError: () => {
+          isCalled = true
+        },
+      })
+
+      form.register('name', 'Jon')
+
+      await sleep(0)
+      await form.submit()
+
+      expect(isCalled).toEqual(true)
+    })
   })
 
   describe('reactive initial state', () => {

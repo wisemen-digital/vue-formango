@@ -19,14 +19,26 @@ interface UseFormReturnType<TSchema extends z.ZodType> {
 }
 
 interface UseFormOptions<TSchema extends z.ZodType> {
+  /**
+   * The zod schema of the form.
+   */
   schema: TSchema
+  /**
+   * The initial state of the form
+   */
   initialState?: MaybeRefOrGetter<NullableKeys<z.infer<TSchema>>>
+  /**
+   * Called when the form is attempted to be submitted, but is invalid.
+   * Only called for client-side validation.
+   */
+  onSubmitError?: () => void
 }
 
 export function useForm<TSchema extends z.ZodType>(
   {
     schema,
     initialState,
+    onSubmitError,
   }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
   // Generate a unique id for the form
   // Used in devtools
@@ -554,8 +566,10 @@ export function useForm<TSchema extends z.ZodType>(
 
     blurAll()
 
-    if (!isValid.value)
+    if (!isValid.value) {
+      onSubmitError?.()
       return
+    }
 
     // We need to keep track of the current form state, because the form might change while submitting
     const currentFormState = deepClone(form)
