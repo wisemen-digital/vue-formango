@@ -20,6 +20,10 @@ const basicArraySchema = z.object({
   array: z.array(z.string()),
 })
 
+const basic2DArraySchema = z.object({
+  array: z.array(z.array(z.string())),
+})
+
 const objectArraySchema = z.object({
   array: z.array(
     z.object({
@@ -234,6 +238,92 @@ describe('useForm', () => {
 		    ],
 		  })
     })
+
+    it('should register a field as a fieldArray', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const arrayAsField = form.register('array', ['John'])
+      const arrayAsArray = form.registerArray('array')
+
+      expect(form.state).toEqual({
+        array: ['John'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['John'])
+      expect(arrayAsArray.modelValue).toEqual(['John'])
+
+      arrayAsField.setValue(['Doe'])
+
+      expect(form.state).toEqual({
+        array: ['Doe'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['Doe'])
+      expect(arrayAsArray.modelValue).toEqual(['Doe'])
+
+      arrayAsArray.append('John')
+
+      expect(form.state).toEqual({
+        array: ['Doe', 'John'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsArray.modelValue).toEqual(['Doe', 'John'])
+    })
+
+    it('should register a fieldArray as a field', () => {
+      const { form } = useForm({
+        schema: basicArraySchema,
+      })
+
+      const arrayAsArray = form.registerArray('array', ['John'])
+      const arrayAsField = form.register('array')
+
+      expect(form.state).toEqual({
+        array: ['John'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['John'])
+      expect(arrayAsArray.modelValue).toEqual(['John'])
+
+      arrayAsField.setValue(['Doe'])
+
+      expect(form.state).toEqual({
+        array: ['Doe'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['Doe'])
+      expect(arrayAsArray.modelValue).toEqual(['Doe'])
+
+      arrayAsArray.append('John')
+
+      expect(form.state).toEqual({
+        array: ['Doe', 'John'],
+      })
+
+      expect(arrayAsField.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsArray.modelValue).toEqual(['Doe', 'John'])
+    })
+
+    it('should register a 2D array field with a default value', () => {
+      const { form } = useForm({
+        schema: basic2DArraySchema,
+      })
+
+      const array = form.registerArray('array', [[]])
+
+      expect(array.modelValue).toEqual([[]])
+
+      expect(form.state).toEqual({
+        array: [[]],
+      })
+
+      array.register('0', ['John'])
+
+      expect(array.modelValue).toEqual([['John']])
+    })
   })
 
   describe('unregister a field or fieldArray', () => {
@@ -435,6 +525,8 @@ describe('useForm', () => {
       })
 
       const array = form.registerArray('array')
+
+      array.register('0')
 
       array.remove(1)
 
