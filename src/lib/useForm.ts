@@ -13,13 +13,24 @@ interface UseFormReturnType<TSchema extends z.ZodType> {
    */
   onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => void
   /**
+   * Called when the form is attempted to be submitted, but is invalid.
+   * Only called for client-side validation.
+   */
+  onSubmitFormError: (cb: () => void) => void
+  /**
    * The form instance itself.
    */
   form: Form<TSchema>
 }
 
 interface UseFormOptions<TSchema extends z.ZodType> {
+  /**
+   * The zod schema of the form.
+   */
   schema: TSchema
+  /**
+   * The initial state of the form
+   */
   initialState?: MaybeRefOrGetter<NullableKeys<z.infer<TSchema>>>
 }
 
@@ -41,6 +52,7 @@ export function useForm<TSchema extends z.ZodType>(
   const errors = ref<z.ZodFormattedError<TSchema>>({} as z.ZodFormattedError<TSchema>)
 
   let onSubmitCb: ((data: z.infer<TSchema>) => MaybePromise<void>) | null = null
+  let onSubmitFormErrorCb: (() => void) | undefined
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
@@ -422,10 +434,18 @@ export function useForm<TSchema extends z.ZodType>(
 
     // Check if the field is already registered
     if (existingId !== null) {
-      const field = registeredFields.get(existingId) ?? null
+      let field = registeredFields.get(existingId) ?? null
 
-      if (field === null)
-        throw new Error(`${path} is already registered as a field array`)
+      if (field === null) {
+        const value = get(form, path)
+        field = createField(existingId, path, value)
+      }
+
+      // Check if value of the field is null or empty array, if so, set default value
+      const isEmpty = field.modelValue === null || (Array.isArray(field.modelValue) && field.modelValue.length === 0)
+
+      if (isEmpty && defaultValue !== undefined)
+        field.setValue(clonedDefaultValue)
 
       // If it is, check if it is still being tracked
       const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
@@ -473,10 +493,12 @@ export function useForm<TSchema extends z.ZodType>(
     // Check if the field is already registered
     if (existingId !== null) {
       // Check if it is registered as a field array
-      const fieldArray = registeredFieldArrays.get(existingId) ?? null
+      let fieldArray = registeredFieldArrays.get(existingId) ?? null
 
-      if (fieldArray === null)
-        throw new Error(`${path} is already registered as a field`)
+      if (fieldArray === null) {
+        const value = get(form, path)
+        fieldArray = createFieldArray(existingId, path, value ?? [])
+      }
 
       // Check if it is still being tracked
       const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
@@ -554,8 +576,10 @@ export function useForm<TSchema extends z.ZodType>(
 
     blurAll()
 
-    if (!isValid.value)
+    if (!isValid.value) {
+      onSubmitFormErrorCb?.()
       return
+    }
 
     // We need to keep track of the current form state, because the form might change while submitting
     const currentFormState = deepClone(form)
@@ -641,6 +665,9 @@ export function useForm<TSchema extends z.ZodType>(
     form: formObject,
     onSubmitForm: (cb: (data: z.infer<TSchema>) => MaybePromise<void>) => {
       onSubmitCb = cb
+    },
+    onSubmitFormError: (cb: () => void) => {
+      onSubmitFormErrorCb = cb
     },
   }
 }
