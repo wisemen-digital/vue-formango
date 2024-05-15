@@ -32,18 +32,12 @@ interface UseFormOptions<TSchema extends z.ZodType> {
    * The initial state of the form
    */
   initialState?: MaybeRefOrGetter<NullableKeys<z.infer<TSchema>>>
-  /**
-   * Called when the form is attempted to be submitted, but is invalid.
-   * Only called for client-side validation.
-   */
-  onSubmitError?: () => void
 }
 
 export function useForm<TSchema extends z.ZodType>(
   {
     schema,
     initialState,
-    onSubmitError,
   }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
   // Generate a unique id for the form
   // Used in devtools
@@ -440,10 +434,18 @@ export function useForm<TSchema extends z.ZodType>(
 
     // Check if the field is already registered
     if (existingId !== null) {
-      const field = registeredFields.get(existingId) ?? null
+      let field = registeredFields.get(existingId) ?? null
 
-      if (field === null)
-        throw new Error(`${path} is already registered as a field array`)
+      if (field === null) {
+        const value = get(form, path)
+        field = createField(existingId, path, value)
+      }
+
+      // Check if value of the field is null or empty array, if so, set default value
+      const isEmpty = field.modelValue === null || (Array.isArray(field.modelValue) && field.modelValue.length === 0)
+
+      if (isEmpty && defaultValue !== undefined)
+        field.setValue(clonedDefaultValue)
 
       // If it is, check if it is still being tracked
       const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
@@ -491,10 +493,12 @@ export function useForm<TSchema extends z.ZodType>(
     // Check if the field is already registered
     if (existingId !== null) {
       // Check if it is registered as a field array
-      const fieldArray = registeredFieldArrays.get(existingId) ?? null
+      let fieldArray = registeredFieldArrays.get(existingId) ?? null
 
-      if (fieldArray === null)
-        throw new Error(`${path} is already registered as a field`)
+      if (fieldArray === null) {
+        const value = get(form, path)
+        fieldArray = createFieldArray(existingId, path, value ?? [])
+      }
 
       // Check if it is still being tracked
       const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
