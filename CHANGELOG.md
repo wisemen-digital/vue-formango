@@ -1,5 +1,11 @@
 # Formango
 
+## 2.0.34
+
+### Minor changes
+
+- Allow for nested object values to be nullable in initialState
+
 ## 2.0.25
 
 ### Major changes
