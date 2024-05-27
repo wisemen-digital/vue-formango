@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter, UnwrapRef } from 'vue'
 import { computed, reactive, ref, toValue, watch } from 'vue'
 import { z } from 'zod'
 import deepClone from 'clone-deep'
-import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
+import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
@@ -31,7 +31,7 @@ interface UseFormOptions<TSchema extends z.ZodType> {
   /**
    * The initial state of the form
    */
-  initialState?: MaybeRefOrGetter<NullableKeys<z.infer<TSchema>>>
+  initialState?: MaybeRefOrGetter<NestedNullableKeys<z.infer<TSchema>>>
 }
 
 export function useForm<TSchema extends z.ZodType>(

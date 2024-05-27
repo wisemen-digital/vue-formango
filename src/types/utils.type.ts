@@ -126,3 +126,7 @@ export type Merge<A, B> = {
 export type NullableKeys<T> = {
   [K in keyof T]: T[K] | null
 }
+
+export type NestedNullableKeys<T> = {
+  [K in keyof T]: T[K] extends object ? NestedNullableKeys<T[K]> | null : T[K] | null
+}
