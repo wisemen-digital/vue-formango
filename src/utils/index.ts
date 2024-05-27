@@ -116,7 +116,7 @@ export const generateId = (): string => {
   for (let i = 0; i < 10; i += 1)
     id += chars.charAt(Math.floor(Math.random() * chars.length))
 
-  return id
+  return `form-${id}`
 }
 
 const x = <number>0

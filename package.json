@@ -1,8 +1,7 @@
 {
   "name": "formango",
   "type": "module",
-  "version": "2.0.30",
-  "packageManager": "pnpm@7.12.0",
+  "version": "2.0.33",
   "description": "",
   "author": "Wouter Laermans <wouter.laermans@appwise.be>",
   "license": "MIT",
@@ -43,13 +42,14 @@
   },
   "dependencies": {
     "@vue/devtools-api": "^6.5.0",
-    "deep-clone": "^4.0.0",
+    "clone-deep": "^4.0.1",
     "zod": "^3.21.4"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.35.3",
     "@antfu/ni": "^0.20.0",
     "@antfu/utils": "^0.7.2",
+    "@types/clone-deep": "^4.0.4",
     "@types/node": "^18.14.1",
     "@vitest/coverage-v8": "^1.2.1",
     "bumpp": "^9.0.0",

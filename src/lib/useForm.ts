@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, UnwrapRef } from 'vue'
 import { computed, reactive, ref, toValue, watch } from 'vue'
 import { z } from 'zod'
-import deepClone from 'deep-clone'
+import deepClone from 'clone-deep'
 import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
@@ -59,7 +59,9 @@ export function useForm<TSchema extends z.ZodType>(
 
   // The initial state of the form
   // This is used to keep track of whether a field has been modified (isDirty)
-  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState ? deepClone(toValue(initialState)) : null)
+  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState
+    ? deepClone(toValue(initialState)) as DeepPartial<z.infer<TSchema>>
+    : null)
 
   // Tracks all the registered paths (id, path)
   const paths = reactive(new Map<string, string>())
@@ -88,7 +90,7 @@ export function useForm<TSchema extends z.ZodType>(
 
   watch(() => initialState, (newInitialState) => {
     if (!isDirty.value && newInitialState != null) {
-      initialFormState.value = deepClone(toValue(newInitialState))
+      initialFormState.value = deepClone(toValue(newInitialState)) as DeepPartial<z.infer<TSchema>>
       Object.assign(form, deepClone(toValue(newInitialState)))
     }
   }, {
