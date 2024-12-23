@@ -1241,3 +1241,38 @@ describe('useForm', () => {
     })
   })
 })
+
+describe('reset form', () => {
+  it('should reset the form with initial state', () => {
+    const { form } = useForm({
+      schema: basicSchema,
+      initialState: {
+        name: 'John',
+      },
+    })
+
+    const name = form.register('name')
+
+    sleep(0)
+
+    expect(name.attrs.modelValue).toEqual('John')
+    name.setValue('Doe')
+
+    sleep(0)
+
+    expect(name.attrs.modelValue).toEqual('Doe')
+    form.reset()
+
+    sleep(0)
+
+    expect(name.attrs.modelValue).toEqual('John')
+  })
+
+  it('should throw error when resetting the form without initial state', () => {
+    const { form } = useForm({
+      schema: basicSchema,
+    })
+
+    expect(() => form.reset()).toThrowError()
+  })
+})

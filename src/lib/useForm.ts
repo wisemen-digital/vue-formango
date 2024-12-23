@@ -659,6 +659,16 @@ export function useForm<TSchema extends z.ZodType>(
     immediate: true,
   })
 
+  const reset = () => {
+    if (initialState == null) {
+      throw new Error('In order to reset the form, you need to provide an initial state')
+      return
+    }
+
+    Object.assign(form, deepClone(toValue(initialState)))
+    hasAttemptedToSubmit.value = false
+  }
+
   const formObject = reactive<any>({
     _id: formId,
     state: form as DeepPartial<z.infer<TSchema>>,
@@ -673,6 +683,7 @@ export function useForm<TSchema extends z.ZodType>(
     submit,
     setValues,
     addErrors,
+    reset,
   })
 
   registerFormWithDevTools(formObject)

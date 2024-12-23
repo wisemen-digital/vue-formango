@@ -304,6 +304,10 @@ export interface Form<TSchema extends z.ZodType> {
    * @returns A promise that resolves once the form has been successfully submitted.
    */
   submit: () => Promise<void>
+  /**
+   * Resets the form to the initial state.
+   */
+  reset: () => void
 }
 
 /**
