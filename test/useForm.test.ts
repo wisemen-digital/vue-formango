@@ -49,7 +49,7 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      expect(name.modelValue).toEqual(null)
+      expect(name.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         name: null,
@@ -67,8 +67,8 @@ describe('useForm', () => {
 
       const name2 = form.register('name')
 
-      expect(name.modelValue).toEqual('John')
-      expect(name2.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
+      expect(name2.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -82,7 +82,7 @@ describe('useForm', () => {
 
       const name = form.register('name', 'John')
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -99,7 +99,7 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -114,7 +114,7 @@ describe('useForm', () => {
       form.register('a')
       const b = form.register('a.b')
 
-      expect(b.modelValue).toEqual(null)
+      expect(b.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         a: {
@@ -131,7 +131,7 @@ describe('useForm', () => {
       form.register('a')
       const b = form.register('a.b', 'John')
 
-      expect(b.modelValue).toEqual('John')
+      expect(b.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         a: {
@@ -147,7 +147,7 @@ describe('useForm', () => {
 
       const b = form.register('a.b')
 
-      expect(b.modelValue).toEqual(null)
+      expect(b.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         a: {
@@ -163,7 +163,7 @@ describe('useForm', () => {
 
       const array = form.registerArray('array')
 
-      expect(array.modelValue).toEqual([])
+      expect(array.attrs.modelValue).toEqual([])
 
       expect(form.state).toEqual({
         array: [],
@@ -177,7 +177,7 @@ describe('useForm', () => {
 
 		  const array = form.registerArray('array', ['John'])
 
-		  expect(array.modelValue).toEqual(['John'])
+		  expect(array.attrs.modelValue).toEqual(['John'])
 
 		  expect(form.state).toEqual({
 		    array: ['John'],
@@ -194,7 +194,7 @@ describe('useForm', () => {
 
 		  const array = form.registerArray('array')
 
-		  expect(array.modelValue).toEqual(['John'])
+		  expect(array.attrs.modelValue).toEqual(['John'])
 
 		  expect(form.state).toEqual({
 		    array: ['John'],
@@ -208,7 +208,7 @@ describe('useForm', () => {
 
 		  const array0Name = form.register('array.0.name')
 
-		  expect(array0Name.modelValue).toEqual(null)
+		  expect(array0Name.attrs.modelValue).toEqual(null)
 
 		  expect(form.state).toEqual({
 		    array: [
@@ -226,7 +226,7 @@ describe('useForm', () => {
 
 		  const name = form.register('array.0.0.name', 'John')
 
-		  expect(name.modelValue).toEqual('John')
+		  expect(name.attrs.modelValue).toEqual('John')
 
 		  expect(form.state).toEqual({
 		    array: [
@@ -251,8 +251,8 @@ describe('useForm', () => {
         array: ['John'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['John'])
-      expect(arrayAsArray.modelValue).toEqual(['John'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['John'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['John'])
 
       arrayAsField.setValue(['Doe'])
 
@@ -260,8 +260,8 @@ describe('useForm', () => {
         array: ['Doe'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['Doe'])
-      expect(arrayAsArray.modelValue).toEqual(['Doe'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['Doe'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['Doe'])
 
       arrayAsArray.append('John')
 
@@ -269,8 +269,8 @@ describe('useForm', () => {
         array: ['Doe', 'John'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['Doe', 'John'])
-      expect(arrayAsArray.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['Doe', 'John'])
     })
 
     it('should register a fieldArray as a field', () => {
@@ -285,8 +285,8 @@ describe('useForm', () => {
         array: ['John'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['John'])
-      expect(arrayAsArray.modelValue).toEqual(['John'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['John'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['John'])
 
       arrayAsField.setValue(['Doe'])
 
@@ -294,8 +294,8 @@ describe('useForm', () => {
         array: ['Doe'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['Doe'])
-      expect(arrayAsArray.modelValue).toEqual(['Doe'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['Doe'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['Doe'])
 
       arrayAsArray.append('John')
 
@@ -303,8 +303,8 @@ describe('useForm', () => {
         array: ['Doe', 'John'],
       })
 
-      expect(arrayAsField.modelValue).toEqual(['Doe', 'John'])
-      expect(arrayAsArray.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsField.attrs.modelValue).toEqual(['Doe', 'John'])
+      expect(arrayAsArray.attrs.modelValue).toEqual(['Doe', 'John'])
     })
 
     it('should register a 2D array field with a default value', () => {
@@ -314,7 +314,7 @@ describe('useForm', () => {
 
       const array = form.registerArray('array', [[]])
 
-      expect(array.modelValue).toEqual([[]])
+      expect(array.attrs.modelValue).toEqual([[]])
 
       expect(form.state).toEqual({
         array: [[]],
@@ -322,7 +322,7 @@ describe('useForm', () => {
 
       array.register('0', ['John'])
 
-      expect(array.modelValue).toEqual([['John']])
+      expect(array.attrs.modelValue).toEqual([['John']])
     })
   })
 
@@ -432,7 +432,7 @@ describe('useForm', () => {
       const a = form.register('a')
       const b = a.register('b')
 
-      expect(b.modelValue).toEqual(null)
+      expect(b.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         a: {
@@ -449,7 +449,7 @@ describe('useForm', () => {
       const a = form.register('a')
       const b = a.register('b', 'John')
 
-      expect(b.modelValue).toEqual('John')
+      expect(b.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         a: {
@@ -470,7 +470,7 @@ describe('useForm', () => {
       const obj = form.register('obj')
       const array = obj.registerArray('array', ['John'])
 
-      expect(array.modelValue).toEqual(['John'])
+      expect(array.attrs.modelValue).toEqual(['John'])
     })
 
     it('should register a field from a field which has been registered from a field', () => {
@@ -482,7 +482,7 @@ describe('useForm', () => {
       const b = a.register('bObj')
       const c = b.register('c')
 
-      expect(c.modelValue).toEqual(null)
+      expect(c.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         a: {
@@ -502,7 +502,7 @@ describe('useForm', () => {
 
       const array0Name = array.register('0')
 
-      expect(array0Name.modelValue).toEqual(null)
+      expect(array0Name.attrs.modelValue).toEqual(null)
 
       expect(form.state).toEqual({
         array: [null],
@@ -577,16 +577,16 @@ describe('useForm', () => {
   })
 
   describe('set a value of a field', () => {
-    it('should set a value of a field with `onUpdate:modelValue`', () => {
+    it('should set a value of a field with `onUpdate:attrs.modelValue`', () => {
       const { form } = useForm({
         schema: basicSchema,
       })
 
       const name = form.register('name')
 
-      name['onUpdate:modelValue']('John')
+      name.attrs['onUpdate:modelValue']('John')
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -602,7 +602,7 @@ describe('useForm', () => {
 
       name.setValue('John')
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -620,7 +620,7 @@ describe('useForm', () => {
         name: 'John',
       })
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         name: 'John',
@@ -640,7 +640,7 @@ describe('useForm', () => {
         },
       })
 
-      expect(b.modelValue).toEqual('John')
+      expect(b.attrs.modelValue).toEqual('John')
 
       expect(form.state).toEqual({
         a: {
@@ -677,7 +677,7 @@ describe('useForm', () => {
 
       const name = form.register('name', 'John')
 
-      expect(name.isDirty).toEqual(false)
+      expect(name.attrs.isDirty).toEqual(false)
       expect(form.isDirty).toEqual(false)
     })
 
@@ -690,7 +690,7 @@ describe('useForm', () => {
 
       name.setValue('John')
 
-      expect(name.isDirty).toEqual(true)
+      expect(name.attrs.isDirty).toEqual(true)
       expect(form.isDirty).toEqual(true)
     })
 
@@ -704,7 +704,7 @@ describe('useForm', () => {
       name.setValue('John')
       name.setValue(null)
 
-      expect(name.isDirty).toEqual(false)
+      expect(name.attrs.isDirty).toEqual(false)
       expect(form.isDirty).toEqual(false)
     })
 
@@ -718,7 +718,7 @@ describe('useForm', () => {
       name.setValue('Joe')
       name.setValue('John')
 
-      expect(name.isDirty).toEqual(false)
+      expect(name.attrs.isDirty).toEqual(false)
       expect(form.isDirty).toEqual(false)
     })
 
@@ -735,7 +735,7 @@ describe('useForm', () => {
 
       await form.submit()
 
-      expect(name.isDirty).toEqual(false)
+      expect(name.attrs.isDirty).toEqual(false)
       expect(form.isDirty).toEqual(false)
     })
   })
@@ -748,7 +748,7 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      expect(name.isTouched).toEqual(false)
+      expect(name.attrs.isTouched).toEqual(false)
     })
 
     it('should be true when `onBlur` is called', () => {
@@ -758,9 +758,9 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      name.onBlur()
+      name.attrs.onBlur()
 
-      expect(name.isTouched).toEqual(true)
+      expect(name.attrs.isTouched).toEqual(true)
     })
 
     it('should be touched when a child field is touched', () => {
@@ -771,9 +771,9 @@ describe('useForm', () => {
       const a = form.register('a')
       const b = a.register('b')
 
-      b.onBlur()
+      b.attrs.onBlur()
 
-      expect(a.isTouched).toEqual(true)
+      expect(a.attrs.isTouched).toEqual(true)
     })
   })
 
@@ -785,7 +785,7 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      expect(name.isChanged).toEqual(false)
+      expect(name.attrs.isChanged).toEqual(false)
     })
 
     it('should be true when `onChange` is called', () => {
@@ -795,9 +795,9 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      name.onChange()
+      name.attrs.onChange()
 
-      expect(name.isChanged).toEqual(true)
+      expect(name.attrs.isChanged).toEqual(true)
     })
   })
 
@@ -937,14 +937,14 @@ describe('useForm', () => {
 
       const name = form.register('name', 'John')
 
-      expect(name.isTouched).toEqual(false)
+      expect(name.attrs.isTouched).toEqual(false)
 
       onSubmitForm(() => {})
 
       await sleep(0)
       await form.submit()
 
-      expect(name.isTouched).toEqual(true)
+      expect(name.attrs.isTouched).toEqual(true)
     })
 
     it('should not submit if there are errors', async () => {
@@ -999,7 +999,7 @@ describe('useForm', () => {
 
       const name = form.register('name')
 
-      expect(name.modelValue).toEqual('John')
+      expect(name.attrs.modelValue).toEqual('John')
 
       initialState.value = {
         name: 'Joe',
@@ -1007,7 +1007,149 @@ describe('useForm', () => {
 
       await sleep(0)
 
-      expect(name.modelValue).toEqual('Joe')
+      expect(name.attrs.modelValue).toEqual('Joe')
+    })
+  })
+
+  describe('attrs.modelValue and value stay in sync', () => {
+    it('should update both when setting value', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      const b = form.register('a.b')
+
+      a.setValue({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+
+      expect(a.attrs.modelValue).toEqual({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+
+      expect(a.value).toEqual({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+
+      expect(b.attrs.modelValue).toEqual('John')
+      expect(b.value).toEqual('John')
+    })
+
+    it('should update both when setting initial value', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+        initialState: {
+          a: {
+            b: 'John',
+            bObj: {
+              c: '123',
+            },
+          },
+        },
+      })
+
+      const a = form.register('a')
+      const b = form.register('a.b')
+
+      expect(a.attrs.modelValue).toEqual({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+
+      expect(a.value).toEqual({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+
+      expect(b.attrs.modelValue).toEqual('John')
+      expect(b.value).toEqual('John')
+    })
+
+    it('should update array when setting value', async () => {
+      const { form } = useForm({
+        schema: objectArraySchema,
+      })
+
+      const array = form.registerArray('array')
+
+      array.setValue([{ name: 'John' }])
+
+      expect(array.attrs.modelValue).toEqual([{ name: 'John' }])
+      expect(array.value).toEqual([{ name: 'John' }])
+    })
+  })
+
+  describe('root and attrs errors should stay in sync', () => {
+    it('should update both when setting value', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+      })
+
+      const a = form.register('a')
+      await sleep(0)
+
+      expect(a.attrs.errors).toEqual(a.errors)
+
+      a.setValue({
+        b: 'John',
+        bObj: {
+          c: '123',
+        },
+      })
+      await sleep(0)
+
+      expect(a.attrs.errors).toEqual(undefined)
+      expect(a.errors).toEqual(undefined)
+    })
+
+    it('should update both when setting initial value', async () => {
+      const { form } = useForm({
+        schema: objectSchema,
+        initialState: {
+          a: {
+            b: 'John',
+            bObj: {
+              c: '123',
+            },
+          },
+        },
+      })
+
+      const a = form.register('a')
+      await sleep(0)
+
+      expect(a.attrs.errors).toEqual(a.errors)
+    })
+
+    it('should update array when setting value', async () => {
+      const { form } = useForm({
+        schema: objectArraySchema,
+      })
+
+      const array = form.registerArray('array')
+      await sleep(0)
+
+      expect(array.attrs.errors).toEqual(array.errors)
+
+      array.setValue([{ name: 'John' }])
+      await sleep(0)
+
+      expect(array.attrs.errors).toEqual(undefined)
+      expect(array.errors).toEqual(undefined)
     })
   })
 

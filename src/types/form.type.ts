@@ -7,6 +7,71 @@ export type MaybePromise<T> = T | Promise<T>
 type ArrayElement<ArrayType extends any[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never
 
+interface FieldAttributes<TValue, TDefaultValue = undefined> {
+  /**
+   * The current value of the field.
+   */
+  modelValue: TDefaultValue extends undefined ? TValue | null : TValue
+  /**
+  * The errors associated with the field and its children.
+  */
+  errors: z.ZodFormattedError<TValue> | undefined
+  /**
+  * Indicates whether the field has any errors.
+  */
+  isValid: boolean
+  /**
+  * Indicates whether the field has been touched (blurred).
+  */
+  isTouched: boolean
+  /**
+  * Indicates whether the field has been changed.
+  * This flag will remain `true` even if the field value is set back to its initial value.
+  */
+  isChanged: boolean
+  /**
+  * Indicates whether the field value is different from its initial value.
+  */
+  isDirty: boolean
+  /**
+  * Updates the current value of the field.
+  *
+  * @param value The new value of the field.
+  */
+  'onUpdate:modelValue': (value: TValue | null) => void
+  /**
+   * Called when the field input is blurred.
+   */
+  onBlur: () => void
+  /**
+   * Called when the field input value is changed.
+  */
+  onChange: () => void
+}
+
+interface FieldArrayAttributes<TValue> {
+  /**
+   * The current value of the field.
+   */
+  modelValue: TValue
+  /**
+  * The errors associated with the field and its children.
+  */
+  errors: z.ZodFormattedError<TValue> | undefined
+  /**
+  * Indicates whether the field has any errors.
+  */
+  isValid: boolean
+  /**
+  * Indicates whether the field has been touched (blurred).
+  */
+  isTouched: boolean
+  /**
+  * Indicates whether the field value is different from its initial value.
+  */
+  isDirty: boolean
+}
+
 /**
  * Represents a form field.
  *
@@ -28,36 +93,14 @@ export interface Field<TValue, TDefaultValue = undefined> {
   _isTouched: boolean
   /**
    * The current value of the field.
-   */
-  modelValue: TDefaultValue extends undefined ? TValue | null : TValue
+   *
+   * This is an alias of `attrs.modelValue`.
+  */
+  value: TDefaultValue extends undefined ? TValue | null : TValue
   /**
-   * The errors associated with the field and its children.
-   */
+  * The errors associated with the field and its children.
+  */
   errors: z.ZodFormattedError<TValue> | undefined
-  /**
-   * Indicates whether the field has any errors.
-   */
-  isValid: boolean
-  /**
-   * Indicates whether the field has been touched (blurred).
-   */
-  isTouched: boolean
-  /**
-   * Indicates whether the field has been changed.
-   *
-   * This flag will remain `true` even if the field value is set back to its initial value.
-   */
-  isChanged: boolean
-  /**
-   * Indicates whether the field value is different from its initial value.
-   */
-  isDirty: boolean
-  /**
-   * Updates the current value of the field.
-   *
-   * @param value The new value of the field.
-   */
-  'onUpdate:modelValue': (value: TValue | null) => void
   /**
    * Sets the current value of the field.
    *
@@ -67,14 +110,9 @@ export interface Field<TValue, TDefaultValue = undefined> {
    */
   setValue: (value: TValue | null) => void
   /**
-   * Called when the field input is blurred.
+   * The attributes of the field you can use to interact with the field.
    */
-  onBlur: () => void
-  /**
-   * Called when the field input value is changed.
-   */
-  onChange: () => void
-
+  attrs: FieldAttributes<TValue, TDefaultValue>
   register: <
     TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
     TChildPath extends FieldPath<TValueAsFieldValues>,
@@ -112,10 +150,6 @@ export interface FieldArray<TValue extends any[]> {
    */
   _id: string
   /**
-   * The current value of the field.
-   */
-  modelValue: TValue
-  /**
    * Array of unique ids of the fields.
    */
   fields: string[]
@@ -124,17 +158,15 @@ export interface FieldArray<TValue extends any[]> {
    */
   errors: z.ZodFormattedError<TValue> | undefined
   /**
-   * Indicates whether the field has any errors.
+   * The attributes of the field you can use to interact with the field.
    */
-  isValid: boolean
+  attrs: FieldArrayAttributes<TValue>
   /**
-   * Indicates whether the field or any of its children have been touched (blurred).
-   */
-  isTouched: boolean
-  /**
-   * Indicates whether the field value is different from its initial value.
-   */
-  isDirty: boolean
+   * The current value of the field.
+   *
+   * This is an alias of `attrs.modelValue`.
+  */
+  value: TValue
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.

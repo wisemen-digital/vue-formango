@@ -83,7 +83,7 @@ export function useForm<TSchema extends z.ZodType>(
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => field.isDirty)
+    ].some(field => field.attrs.isDirty)
   })
 
   const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
@@ -165,35 +165,39 @@ export function useForm<TSchema extends z.ZodType>(
     defaultOrExistingValue: unknown,
   ): Field<any, any> => {
     const field = reactive<Field<any, any>>({
-      '_id': id,
-      '_path': path,
-      'isValid': false,
-      '_isTouched': false,
-      'isDirty': false,
-      'isTouched': false,
-      'isChanged': false,
-      'modelValue': defaultOrExistingValue,
-      'errors': undefined,
-      'onUpdate:modelValue': (newValue) => {
-        set(form, field._path as string, newValue)
+      _id: id,
+      _path: path,
+      attrs: {
+        'isChanged': false,
+        'isValid': false,
+        'isDirty': false,
+        'isTouched': false,
+        'modelValue': defaultOrExistingValue,
+        'errors': undefined,
+        'onUpdate:modelValue': (newValue) => {
+          set(form, field._path as string, newValue)
+        },
+        'onBlur': () => {
+          field._isTouched = true
+        },
+        'onChange': () => {
+          field.attrs.isChanged = true
+        },
       },
-      'onBlur': () => {
-        field._isTouched = true
+      _isTouched: false,
+      value: defaultOrExistingValue,
+      errors: undefined,
+      setValue: (newValue) => {
+        field.attrs['onUpdate:modelValue'](newValue)
       },
-      'onChange': () => {
-        field.isChanged = true
-      },
-      'setValue': (newValue) => {
-        field['onUpdate:modelValue'](newValue)
-      },
-      'register': (childPath, defaultValue) => {
+      register: (childPath, defaultValue) => {
         const currentPath = paths.get(id) as string
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
-      'registerArray': (childPath, defaultValue) => {
+      registerArray: (childPath, defaultValue) => {
         const currentPath = paths.get(id) as string
 
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
@@ -303,10 +307,14 @@ export function useForm<TSchema extends z.ZodType>(
     const fieldArray = reactive<FieldArray<any>>({
       _id: id,
       _path: path,
-      isValid: false,
-      isDirty: false,
-      isTouched: false,
-      modelValue: defaultOrExistingValue,
+      attrs: {
+        isValid: false,
+        isDirty: false,
+        isTouched: false,
+        modelValue: defaultOrExistingValue,
+        errors: undefined,
+      },
+      value: defaultOrExistingValue,
       errors: undefined,
       append,
       fields,
@@ -342,7 +350,7 @@ export function useForm<TSchema extends z.ZodType>(
     return (field as Field<any, any>)._isTouched !== undefined
   }
 
-  const getFieldWithTrackedDepencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
+  const getFieldWithTrackedDependencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
     field: TFieldArray,
     initialValue: unknown,
   ): TFieldArray => {
@@ -354,21 +362,23 @@ export function useForm<TSchema extends z.ZodType>(
       return path
     }) as unknown as string | null
 
-    field.modelValue = computed<unknown>(() => {
+    field.attrs.modelValue = computed<unknown>(() => {
       if (field._path === null)
         return null
 
       return get(form, field._path)
     })
 
-    field.isValid = computed<boolean>(() => {
+    field.value = computed(() => toValue(field.attrs.modelValue))
+
+    field.attrs.isValid = computed<boolean>(() => {
       if (field._path === null)
         return false
 
       return get(errors.value, field._path) === undefined
     }) as unknown as boolean
 
-    field.isDirty = computed<boolean>(() => {
+    field.attrs.isDirty = computed<boolean>(() => {
       if (field._path === null)
         return false
 
@@ -381,19 +391,19 @@ export function useForm<TSchema extends z.ZodType>(
       //   return currentFile.name !== initialFile?.name
       // }
 
-      if (field.modelValue === '' && initialValue === null)
+      if (field.attrs.modelValue === '' && initialValue === null)
         return false
 
-      return JSON.stringify(field.modelValue) !== JSON.stringify(initialValue)
+      return JSON.stringify(field.attrs.modelValue) !== JSON.stringify(initialValue)
     }) as unknown as boolean
 
-    field.isTouched = computed<boolean>(() => {
+    field.attrs.isTouched = computed<boolean>(() => {
       if (field._path === null)
         return false
 
       const children = getChildPaths(field._path)
 
-      const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
+      const areAnyOfItsChildrenTouched = children.some(child => child.attrs.isTouched)
 
       if (areAnyOfItsChildrenTouched)
         return true
@@ -404,11 +414,15 @@ export function useForm<TSchema extends z.ZodType>(
       return false
     }) as unknown as boolean
 
-    field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
+    field.attrs.errors = computed<z.ZodFormattedError<TSchema>>(() => {
       if (field._path === null)
         return {}
 
       return get(errors.value, field._path)
+    }) as unknown as z.ZodFormattedError<TSchema>
+
+    field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
+      return toValue(field.attrs.errors) as unknown as z.ZodFormattedError<TSchema>
     }) as unknown as z.ZodFormattedError<TSchema>
 
     return field
@@ -444,7 +458,7 @@ export function useForm<TSchema extends z.ZodType>(
       }
 
       // Check if value of the field is null or empty array, if so, set default value
-      const isEmpty = field.modelValue === null || (Array.isArray(field.modelValue) && field.modelValue.length === 0)
+      const isEmpty = field.attrs.modelValue === null || (Array.isArray(field.attrs.modelValue) && field.attrs.modelValue.length === 0)
 
       if (isEmpty && defaultValue !== undefined)
         field.setValue(clonedDefaultValue)
@@ -456,7 +470,7 @@ export function useForm<TSchema extends z.ZodType>(
         return field
 
       // If it isn't being tracked anymore, retrack it
-      return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
+      return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
     }
 
     // If it isn't registered, register it
@@ -485,7 +499,7 @@ export function useForm<TSchema extends z.ZodType>(
     registerFieldWithDevTools(formId, field)
 
     // Track the field
-    return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
+    return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
   }
 
   const registerArray: RegisterArray<TSchema> = (path, defaultValue) => {
@@ -510,7 +524,7 @@ export function useForm<TSchema extends z.ZodType>(
         return fieldArray
 
       // If it isn't being tracked anymore, retrack it
-      return getFieldWithTrackedDepencies(fieldArray, [])
+      return getFieldWithTrackedDependencies(fieldArray, [])
     }
 
     // If it isn't registered, register it
@@ -549,7 +563,7 @@ export function useForm<TSchema extends z.ZodType>(
     registerParentPaths(path)
 
     // Track the field
-    return getFieldWithTrackedDepencies(fieldArray, [])
+    return getFieldWithTrackedDependencies(fieldArray, [])
   }
 
   const unregister: Unregister<TSchema> = (path) => {
@@ -570,7 +584,7 @@ export function useForm<TSchema extends z.ZodType>(
 
   const blurAll = (): void => {
     for (const field of registeredFields.values())
-      field.onBlur()
+      field.attrs.onBlur()
   }
 
   const submit = async (): Promise<void> => {
