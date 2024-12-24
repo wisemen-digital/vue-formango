@@ -1,4 +1,3 @@
-import { type z } from 'zod'
 import type { ComputedRef, Ref } from 'vue'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { DeepPartial } from './utils.type'
@@ -48,7 +47,11 @@ export interface Field<TValue, TDefaultValue = undefined> {
   /**
   * The errors associated with the field and its children.
   */
-  errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
+  errors: ComputedRef<FormattedError<TValue>[]>
+  /**
+  * The raw errors associated with the field and its children.
+  */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
   /**
     * Indicates whether the field has any errors.
     */
@@ -126,7 +129,11 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * The errors associated with the field and its children.
    */
-  errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
+  errors: ComputedRef<FormattedError<TValue>[]>
+  /**
+  * The raw errors associated with the field and its children.
+  */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
   /**
    * The current value of the field.
    */
@@ -229,7 +236,12 @@ export interface Form<TSchema extends StandardSchemaV1> {
   /**
    * The collection of all registered fields' errors.
    */
-  errors: ComputedRef<DeepPartial<z.ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>>
+  errors: ComputedRef<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>
+  /**
+  * The raw errors associated with the field and its children.
+  */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
+
   /**
    * Indicates whether the form is dirty or not.
    *
@@ -273,7 +285,7 @@ export interface Form<TSchema extends StandardSchemaV1> {
    *
    * @param errors The new errors for the form fields.
    */
-  addErrors: (errors: DeepPartial<z.ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>) => void
+  addErrors: (errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]) => void
   /**
    * Sets values in the form.
    *
@@ -307,4 +319,12 @@ export interface UseForm<T extends StandardSchemaV1> {
    * The form instance itself.
    */
   form: Form<T>
+}
+
+export interface FormattedError<
+ TType,
+> {
+  path: FieldPath<TType extends FieldValues ? TType : never>
+
+  message: string
 }

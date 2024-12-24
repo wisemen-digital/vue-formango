@@ -15,8 +15,8 @@ describe('errors', () => {
 
     await sleep(0)
 
-    expect(form.errors.value).toEqual({})
-    expect(name.errors.value).toBeUndefined()
+    expect(form.errors.value).toEqual([])
+    expect(name.errors.value).toEqual([])
   })
 
   it('should have errors when a field is invalid', async () => {
@@ -31,8 +31,15 @@ describe('errors', () => {
 
     await sleep(0)
 
-    expect(form.errors.value).toBeDefined()
-    expect(name.errors.value).toBeDefined()
+    expect(form.errors.value).toEqual([{
+      message: 'String must contain at least 4 character(s)',
+      path: 'name',
+    }])
+
+    expect(name.errors.value).toEqual([{
+      message: 'String must contain at least 4 character(s)',
+      path: null,
+    }])
   })
 
   it('should have errors when a nested field is invalid', async () => {
@@ -49,6 +56,7 @@ describe('errors', () => {
 
     await sleep(0)
 
+    a.errors.value.find(error => error.path === null)
     expect(a.errors.value).toBeDefined()
     expect(form.errors.value).toBeDefined()
   })
@@ -61,17 +69,15 @@ describe('errors', () => {
       },
     })
 
-    form.addErrors({
-      name: {
-        _errors: ['Invalid name'],
-      },
-    })
+    form.addErrors([{
+      path: 'name',
+      message: 'Invalid name',
+    }])
 
-    expect(form.errors.value).toEqual({
-      name: {
-        _errors: ['Invalid name'],
-      },
-    })
+    expect(form.errors.value).toEqual([{
+      path: 'name',
+      message: 'Invalid name',
+    }])
   })
 
   it('should set nested errors with `addErrors` while existing errors remain', () => {
@@ -82,46 +88,211 @@ describe('errors', () => {
       },
     })
 
-    form.addErrors({
-      a: {
-        b: {
-          _errors: ['Invalid name'],
-        },
+    form.addErrors([{
+      path: 'a.b',
+      message: 'Invalid name',
+    }])
+
+    expect(form.errors.value).toEqual([{
+      path: 'a.b',
+      message: 'Invalid name',
+    }])
+
+    form.addErrors([{
+      path: 'a.bObj.c',
+      message: 'Invalid name',
+    }])
+
+    expect(form.errors.value).toEqual([
+      {
+        path: 'a.b',
+        message: 'Invalid name',
+      },
+      {
+        path: 'a.bObj.c',
+        message: 'Invalid name',
+      },
+    ])
+  })
+
+  it('form should have raw errors', async () => {
+    const form = useForm({
+      schema: basicSchema,
+      onSubmit: (data) => {
+        return data
       },
     })
 
-    expect(form.errors.value).toEqual({
-      a: {
-        _errors: [],
-        b: {
-          _errors: ['Invalid name'],
+    form.addErrors([{
+      path: 'name',
+      message: 'Invalid name',
+    }])
+
+    await sleep(0)
+
+    expect(form.rawErrors.value).toEqual(
+      [
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Required',
+          path: [
+            'name',
+          ],
+          received: 'undefined',
         },
+      ],
+    )
+  })
+
+  it('form should have no raw errors when all fields are valid', async () => {
+    const form = useForm({
+      schema: basicSchema,
+      initialState: {
+        name: 'I am a name',
+      },
+      onSubmit: (data) => {
+        return data
       },
     })
 
-    form.addErrors({
-      a: {
-        bObj: {
-          c: {
-            _errors: ['Invalid name'],
+    await sleep(0)
+
+    expect(form.rawErrors.value).toEqual([])
+  })
+
+  it('form should have nested raw errors', async () => {
+    const form = useForm({
+      schema: objectSchema,
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    await sleep(0)
+
+    expect(form.rawErrors.value).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: [
+          'a',
+        ],
+        received: 'undefined',
+      },
+    ])
+
+    form.addErrors([{
+      path: 'a.b',
+      message: 'Invalid name',
+    }])
+
+    expect(form.rawErrors.value).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: [
+          'a',
+        ],
+        received: 'undefined',
+      },
+      {
+        message: 'Invalid name',
+        path: [
+          'a',
+          'b',
+        ],
+      },
+    ])
+  })
+
+  it('field should have raw errors', async () => {
+    const form = useForm({
+      schema: basicSchema,
+      initialState: {
+        name: null,
+      },
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    const name = form.register('name')
+
+    await sleep(0)
+
+    expect(name.rawErrors.value).toEqual([{
+      code: 'invalid_type',
+      expected: 'string',
+      message: 'Expected string, received null',
+      path: [],
+      received: 'null',
+    }])
+  })
+
+  it('field should have nested raw errors', async () => {
+    const form = useForm({
+      schema: objectSchema,
+      initialState: {
+        a: {
+          b: null,
+          bObj: {
+            c: null,
           },
         },
       },
-    })
-
-    expect(form.errors.value).toEqual({
-      a: {
-        _errors: [],
-        b: {
-          _errors: ['Invalid name'],
-        },
-        bObj: {
-          _errors: [],
-          c: {
-            _errors: ['Invalid name'],
-          },
-        },
+      onSubmit: (data) => {
+        return data
       },
     })
+
+    const a = form.register('a')
+
+    await sleep(0)
+
+    expect(a.rawErrors.value).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'null',
+        path: ['b'],
+        message: 'Expected string, received null',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'null',
+        path: ['bObj', 'c'],
+        message: 'Expected string, received null',
+      },
+    ])
+
+    form.addErrors([{
+      path: 'a.b',
+      message: 'Invalid name',
+    }])
+
+    expect(a.rawErrors.value).toEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'null',
+        path: ['b'],
+        message: 'Expected string, received null',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'null',
+        path: ['bObj', 'c'],
+        message: 'Expected string, received null',
+      },
+      {
+        path: ['b'],
+        message: 'Invalid name',
+      },
+    ])
   })
 })

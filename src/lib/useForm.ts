@@ -2,11 +2,9 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { computed, ref, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import type { ZodFormattedError } from 'zod'
-import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
+import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
-import { formatErrors } from './formatErrors'
 
 interface UseFormOptions<TSchema extends StandardSchemaV1> {
   /**
@@ -45,7 +43,20 @@ export function useForm<TSchema extends StandardSchemaV1>(
   const form = ref<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>({} as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>) as Ref<Record<string, unknown>>
 
   // The errors of the form
-  const errors = ref<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>({} as ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>) as Ref<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>
+  const rawErrors = ref<readonly StandardSchemaV1.Issue[]>([])
+  const formattedErrors = computed<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>(() => {
+    return rawErrors.value.map((error) => {
+      if (error.path == null)
+        return error
+
+      const newPath = error.path.join('.')
+
+      return {
+        message: error.message,
+        path: newPath,
+      }
+    }) as FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]
+  })
 
   const onSubmitCb: ((data: StandardSchemaV1.InferOutput<TSchema>) => MaybePromise<void>) | null = onSubmit
   const onSubmitFormErrorCb: (() => void) | undefined = onSubmitError
@@ -82,7 +93,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     ].some(field => field.isDirty.value)
   })
 
-  const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
+  const isValid = computed<boolean>(() => Object.keys(rawErrors.value).length === 0)
 
   watch(() => toValue(initialState), (newInitialState) => {
     if (!isDirty.value && newInitialState != null) {
@@ -166,9 +177,10 @@ export function useForm<TSchema extends StandardSchemaV1>(
       'isChanged': ref(false),
       'isValid': computed(() => false),
       'isDirty': computed(() => false),
+      'rawErrors': computed(() => []),
       'isTouched': computed(() => false),
       'modelValue': computed(() => defaultOrExistingValue),
-      'errors': computed(() => undefined),
+      'errors': computed(() => []),
       'onUpdate:modelValue': (newValue) => {
         if (field._path.value === null)
           return
@@ -306,7 +318,8 @@ export function useForm<TSchema extends StandardSchemaV1>(
       isDirty: computed(() => false),
       isTouched: computed(() => false),
       modelValue: computed(() => defaultOrExistingValue),
-      errors: computed(() => undefined),
+      rawErrors: computed(() => []),
+      errors: computed(() => []),
       value: computed(() => defaultOrExistingValue),
       append,
       fields,
@@ -366,7 +379,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
       if (field._path.value === null)
         return false
 
-      return get(errors.value, field._path.value) === undefined
+      return get(rawErrors.value, field._path.value) === undefined
     })
 
     field.isDirty = computed<boolean>(() => {
@@ -405,11 +418,63 @@ export function useForm<TSchema extends StandardSchemaV1>(
       return false
     })
 
-    field.errors = computed<ZodFormattedError<TSchema>>(() => {
+    field.rawErrors = computed<StandardSchemaV1.Issue[]>(() => {
       if (field._path.value === null)
-        return {}
+        return []
 
-      return get(errors.value, field._path.value)
+      // Return all errors that have the field path as a prefix
+      return rawErrors.value.filter((error) => {
+        if (error.path == null || field._path.value == null)
+          return false
+
+        return error.path.join('.').startsWith(field._path.value)
+      }).map((error) => {
+        if (error.path == null || field._path.value == null)
+          return error
+
+        // Remove the field path from the error path
+        const newPath = error.path.slice(field._path.value.length)
+
+        return {
+          ...error,
+          path: newPath,
+        }
+      })
+    })
+
+    field.errors = computed<FormattedError<any>[]>(() => {
+      if (field._path.value === null)
+        return []
+
+      const formattedErrors = rawErrors.value.filter((error) => {
+        if (error.path == null || field._path.value == null)
+          return false
+
+        return error.path.join('.').startsWith(field._path.value)
+      }).map((error: StandardSchemaV1.Issue) => {
+        if (error.path == null || field._path.value == null) {
+          return {
+            message: error.message,
+            path: null,
+          }
+        }
+
+        const newPath = error.path.slice(field._path.value.length).join('.')
+
+        if (newPath.length === 0) {
+          return {
+            message: error.message,
+            path: null,
+          }
+        }
+
+        return {
+          message: error.message,
+          path: newPath,
+        }
+      })
+
+      return formattedErrors as FormattedError<any>[]
     })
 
     return field
@@ -603,31 +668,27 @@ export function useForm<TSchema extends StandardSchemaV1>(
       set(form.value, path, values[path])
   }
 
-  const addErrors = (err: DeepPartial<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>): void => {
-    const mergeErrors = (
-      existingErrors: DeepPartial<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>,
-      err: DeepPartial<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>,
-    ): void => {
-      for (const key in err) {
-        if (key === '_errors') {
-          existingErrors[key] = err[key]
-          continue
+  const addErrors = (err: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]): void => {
+    const standardErrors = err.map((error) => {
+      if (error.path == null) {
+        return {
+          ...error,
+          path: [],
         }
-
-        if (existingErrors[key] == null) {
-          existingErrors[key] = {
-            _errors: [],
-          } as any
-        }
-
-        mergeErrors(existingErrors[key] as any, err[key] as any)
       }
-    }
 
-    mergeErrors(
-      errors.value as DeepPartial<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>,
-      err,
-    )
+      const newPath = error.path.split('.')
+
+      return {
+        ...error,
+        path: newPath,
+      }
+    })
+
+    rawErrors.value = [
+      ...rawErrors.value,
+      ...standardErrors,
+    ]
   }
 
   watch(() => form.value, async () => {
@@ -635,11 +696,11 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
     const hasErrors = result.issues != null && result.issues.length > 0
     if (hasErrors) {
-      errors.value = formatErrors<StandardSchemaV1.InferOutput<TSchema>>(result.issues)
+      rawErrors.value = result.issues
       return
     }
 
-    errors.value = {} as ZodFormattedError<TSchema>
+    rawErrors.value = []
   }, {
     deep: true,
     immediate: true,
@@ -656,7 +717,8 @@ export function useForm<TSchema extends StandardSchemaV1>(
   const formObject: Form<TSchema> = {
     _id: formId,
     state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
-    errors: computed(() => errors.value) as ComputedRef<DeepPartial<ZodFormattedError<StandardSchemaV1.InferOutput<TSchema>>>>,
+    errors: computed(() => formattedErrors.value),
+    rawErrors: computed(() => rawErrors.value) as ComputedRef<StandardSchemaV1.Issue[]>,
     isDirty,
     isValid,
     isSubmitting: computed(() => isSubmitting.value),

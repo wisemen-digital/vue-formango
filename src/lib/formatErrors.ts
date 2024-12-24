@@ -9,7 +9,7 @@ const isZodIssue = (error: any): error is ZodIssue => {
   return error.code !== undefined
 }
 
-export function formatErrors<TType>(issues: readonly StandardSchemaV1.Issue[]): ZodFormattedError<TType> {
+export function formatErrorsToZodFormattedError<TType>(issues: readonly StandardSchemaV1.Issue[]): ZodFormattedError<TType> {
   const fieldErrors: ZodFormattedError<TType> = { _errors: [] } as any
   const processIssue = (issue: StandardSchemaV1.Issue) => {
     // Handle zod only issue types
