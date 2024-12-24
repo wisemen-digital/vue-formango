@@ -36,7 +36,7 @@ function mapFieldsToObject(fields: Field<any, any>[]): ObjectWithPossiblyFieldRe
   fields.forEach((field) => {
     if (!field._path)
       return
-    const path = field._path
+    const path = field._path.value
     const pathArray = path?.split('.')
     if (!pathArray)
       return
