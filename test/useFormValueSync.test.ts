@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { useForm } from '../src/lib/useForm'
 import { objectArraySchema, objectSchema } from './testUtils'
 
-describe('attrs.modelValue.value and value stay in sync', () => {
+describe('modelValue and value stay in sync', () => {
   it('should update both when setting value', async () => {
     const form = useForm({
       schema: objectSchema,
@@ -21,7 +21,7 @@ describe('attrs.modelValue.value and value stay in sync', () => {
       },
     })
 
-    expect(a.attrs.modelValue.value).toEqual({
+    expect(a.modelValue.value).toEqual({
       b: 'John',
       bObj: {
         c: '123',
@@ -35,7 +35,7 @@ describe('attrs.modelValue.value and value stay in sync', () => {
       },
     })
 
-    expect(b.attrs.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toEqual('John')
     expect(b.value.value).toEqual('John')
   })
 
@@ -58,7 +58,7 @@ describe('attrs.modelValue.value and value stay in sync', () => {
     const a = form.register('a')
     const b = form.register('a.b')
 
-    expect(a.attrs.modelValue.value).toEqual({
+    expect(a.modelValue.value).toEqual({
       b: 'John',
       bObj: {
         c: '123',
@@ -72,7 +72,7 @@ describe('attrs.modelValue.value and value stay in sync', () => {
       },
     })
 
-    expect(b.attrs.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toEqual('John')
     expect(b.value.value).toEqual('John')
   })
 
@@ -88,7 +88,7 @@ describe('attrs.modelValue.value and value stay in sync', () => {
 
     array.setValue([{ name: 'John' }])
 
-    expect(array.attrs.modelValue.value).toEqual([{ name: 'John' }])
+    expect(array.modelValue.value).toEqual([{ name: 'John' }])
     expect(array.value.value).toEqual([{ name: 'John' }])
   })
 })

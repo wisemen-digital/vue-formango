@@ -15,7 +15,7 @@ describe('register a field from a field or fieldArray', () => {
     const a = form.register('a')
     const b = a.register('b')
 
-    expect(b.attrs.modelValue.value).toEqual(null)
+    expect(b.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       a: {
@@ -35,7 +35,7 @@ describe('register a field from a field or fieldArray', () => {
     const a = form.register('a')
     const b = a.register('b', 'John')
 
-    expect(b.attrs.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       a: {
@@ -59,7 +59,7 @@ describe('register a field from a field or fieldArray', () => {
     const obj = form.register('obj')
     const array = obj.registerArray('array', ['John'])
 
-    expect(array.attrs.modelValue.value).toEqual(['John'])
+    expect(array.modelValue.value).toEqual(['John'])
   })
 
   it('should register a field from a field which has been registered from a field', () => {
@@ -74,7 +74,7 @@ describe('register a field from a field or fieldArray', () => {
     const b = a.register('bObj')
     const c = b.register('c')
 
-    expect(c.attrs.modelValue.value).toEqual(null)
+    expect(c.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       a: {
@@ -97,7 +97,7 @@ describe('register a field from a field or fieldArray', () => {
 
     const array0Name = array.register('0')
 
-    expect(array0Name.attrs.modelValue.value).toEqual(null)
+    expect(array0Name.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       array: [null],

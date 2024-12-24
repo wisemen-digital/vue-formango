@@ -13,7 +13,7 @@ describe('register a field or fieldArray', () => {
 
     const name = form.register('name')
 
-    expect(name.attrs.modelValue.value).toEqual(null)
+    expect(name.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       name: null,
@@ -34,8 +34,8 @@ describe('register a field or fieldArray', () => {
 
     const name2 = form.register('name')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
-    expect(name2.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
+    expect(name2.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -53,7 +53,7 @@ describe('register a field or fieldArray', () => {
 
     const name = form.register('name', 'John')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -73,7 +73,7 @@ describe('register a field or fieldArray', () => {
 
     const name = form.register('name')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -91,7 +91,7 @@ describe('register a field or fieldArray', () => {
     form.register('a')
     const b = form.register('a.b')
 
-    expect(b.attrs.modelValue.value).toEqual(null)
+    expect(b.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       a: {
@@ -111,7 +111,7 @@ describe('register a field or fieldArray', () => {
     form.register('a')
     const b = form.register('a.b', 'John')
 
-    expect(b.attrs.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       a: {
@@ -130,7 +130,7 @@ describe('register a field or fieldArray', () => {
 
     const b = form.register('a.b')
 
-    expect(b.attrs.modelValue.value).toEqual(null)
+    expect(b.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       a: {
@@ -149,7 +149,7 @@ describe('register a field or fieldArray', () => {
 
     const array = form.registerArray('array')
 
-    expect(array.attrs.modelValue.value).toEqual([])
+    expect(array.modelValue.value).toEqual([])
 
     expect(form.state.value).toEqual({
       array: [],
@@ -167,7 +167,7 @@ describe('register a field or fieldArray', () => {
 
     const array = form.registerArray('array', ['John'])
 
-    expect(array.attrs.modelValue.value).toEqual(['John'])
+    expect(array.modelValue.value).toEqual(['John'])
 
     expect(form.state.value).toEqual({
       array: ['John'],
@@ -187,7 +187,7 @@ describe('register a field or fieldArray', () => {
 
     const array = form.registerArray('array')
 
-    expect(array.attrs.modelValue.value).toEqual(['John'])
+    expect(array.modelValue.value).toEqual(['John'])
 
     expect(form.state.value).toEqual({
       array: ['John'],
@@ -204,7 +204,7 @@ describe('register a field or fieldArray', () => {
 
     const array0Name = form.register('array.0.name')
 
-    expect(array0Name.attrs.modelValue.value).toEqual(null)
+    expect(array0Name.modelValue.value).toEqual(null)
 
     expect(form.state.value).toEqual({
       array: [
@@ -225,7 +225,7 @@ describe('register a field or fieldArray', () => {
 
     const name = form.register('array.0.0.name', 'John')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       array: [
@@ -253,8 +253,8 @@ describe('register a field or fieldArray', () => {
       array: ['John'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['John'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['John'])
+    expect(arrayAsField.modelValue.value).toEqual(['John'])
+    expect(arrayAsArray.modelValue.value).toEqual(['John'])
 
     arrayAsField.setValue(['Doe'])
 
@@ -262,8 +262,8 @@ describe('register a field or fieldArray', () => {
       array: ['Doe'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['Doe'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['Doe'])
+    expect(arrayAsField.modelValue.value).toEqual(['Doe'])
+    expect(arrayAsArray.modelValue.value).toEqual(['Doe'])
 
     arrayAsArray.append('John')
 
@@ -271,8 +271,8 @@ describe('register a field or fieldArray', () => {
       array: ['Doe', 'John'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['Doe', 'John'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['Doe', 'John'])
+    expect(arrayAsField.modelValue.value).toEqual(['Doe', 'John'])
+    expect(arrayAsArray.modelValue.value).toEqual(['Doe', 'John'])
   })
 
   it('should register a fieldArray as a field', () => {
@@ -290,8 +290,8 @@ describe('register a field or fieldArray', () => {
       array: ['John'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['John'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['John'])
+    expect(arrayAsField.modelValue.value).toEqual(['John'])
+    expect(arrayAsArray.modelValue.value).toEqual(['John'])
 
     arrayAsField.setValue(['Doe'])
 
@@ -299,8 +299,8 @@ describe('register a field or fieldArray', () => {
       array: ['Doe'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['Doe'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['Doe'])
+    expect(arrayAsField.modelValue.value).toEqual(['Doe'])
+    expect(arrayAsArray.modelValue.value).toEqual(['Doe'])
 
     arrayAsArray.append('John')
 
@@ -308,8 +308,8 @@ describe('register a field or fieldArray', () => {
       array: ['Doe', 'John'],
     })
 
-    expect(arrayAsField.attrs.modelValue.value).toEqual(['Doe', 'John'])
-    expect(arrayAsArray.attrs.modelValue.value).toEqual(['Doe', 'John'])
+    expect(arrayAsField.modelValue.value).toEqual(['Doe', 'John'])
+    expect(arrayAsArray.modelValue.value).toEqual(['Doe', 'John'])
   })
 
   it('should register a 2D array field with a default value', () => {
@@ -323,7 +323,7 @@ describe('register a field or fieldArray', () => {
 
     const array = form.registerArray('array', [[]])
 
-    expect(array.attrs.modelValue.value).toEqual([[]])
+    expect(array.modelValue.value).toEqual([[]])
 
     expect(form.state.value).toEqual({
       array: [[]],
@@ -331,6 +331,6 @@ describe('register a field or fieldArray', () => {
 
     array.register('0', ['John'])
 
-    expect(array.attrs.modelValue.value).toEqual([['John']])
+    expect(array.modelValue.value).toEqual([['John']])
   })
 })

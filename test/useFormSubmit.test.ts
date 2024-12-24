@@ -33,12 +33,12 @@ describe('submit', () => {
 
     const name = form.register('name', 'John')
 
-    expect(name.attrs.isTouched.value).toEqual(false)
+    expect(name.isTouched.value).toEqual(false)
 
     await sleep(0)
     await form.submit()
 
-    expect(name.attrs.isTouched.value).toEqual(true)
+    expect(name.isTouched.value).toEqual(true)
   })
 
   it('should not submit if there are errors', async () => {

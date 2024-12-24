@@ -79,7 +79,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => field.attrs.isDirty.value)
+    ].some(field => field.isDirty.value)
   })
 
   const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
@@ -161,41 +161,38 @@ export function useForm<TSchema extends StandardSchemaV1>(
     defaultOrExistingValue: unknown,
   ): Field<any, any> => {
     const field: Field<any, any> = {
-      _id: id,
-      _path: computed(() => path),
-      attrs: {
-        'isChanged': ref(false),
-        'isValid': computed(() => false),
-        'isDirty': computed(() => false),
-        'isTouched': computed(() => false),
-        'modelValue': computed(() => defaultOrExistingValue),
-        'errors': computed(() => undefined),
-        'onUpdate:modelValue': (newValue) => {
-          if (field._path.value === null)
-            return
-          set(form.value, field._path.value, newValue)
-        },
-        'onBlur': () => {
-          field._isTouched.value = true
-        },
-        'onChange': () => {
-          field.attrs.isChanged.value = true
-        },
+      '_id': id,
+      '_path': computed(() => path),
+      'isChanged': ref(false),
+      'isValid': computed(() => false),
+      'isDirty': computed(() => false),
+      'isTouched': computed(() => false),
+      'modelValue': computed(() => defaultOrExistingValue),
+      'errors': computed(() => undefined),
+      'onUpdate:modelValue': (newValue) => {
+        if (field._path.value === null)
+          return
+        set(form.value, field._path.value, newValue)
       },
-      _isTouched: ref(false),
-      value: computed(() => defaultOrExistingValue),
-      errors: computed(() => undefined),
-      setValue: (newValue) => {
-        field.attrs['onUpdate:modelValue'](newValue)
+      'onBlur': () => {
+        field._isTouched.value = true
       },
-      register: (childPath, defaultValue) => {
+      'onChange': () => {
+        field.isChanged.value = true
+      },
+      '_isTouched': ref(false),
+      'value': computed(() => defaultOrExistingValue),
+      'setValue': (newValue) => {
+        field['onUpdate:modelValue'](newValue)
+      },
+      'register': (childPath, defaultValue) => {
         const currentPath = paths.value.get(id)
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
-      registerArray: (childPath, defaultValue) => {
+      'registerArray': (childPath, defaultValue) => {
         const currentPath = paths.value.get(id) as string
 
         const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
@@ -305,15 +302,12 @@ export function useForm<TSchema extends StandardSchemaV1>(
     const fieldArray: FieldArray<any> = ({
       _id: id,
       _path: computed(() => path),
-      attrs: {
-        isValid: computed(() => false),
-        isDirty: computed(() => false),
-        isTouched: computed(() => false),
-        modelValue: computed(() => defaultOrExistingValue),
-        errors: computed(() => undefined),
-      },
-      value: computed(() => defaultOrExistingValue),
+      isValid: computed(() => false),
+      isDirty: computed(() => false),
+      isTouched: computed(() => false),
+      modelValue: computed(() => defaultOrExistingValue),
       errors: computed(() => undefined),
+      value: computed(() => defaultOrExistingValue),
       append,
       fields,
       insert,
@@ -360,22 +354,22 @@ export function useForm<TSchema extends StandardSchemaV1>(
       return path
     })
 
-    field.attrs.modelValue = computed<unknown>(() => {
+    field.modelValue = computed<unknown>(() => {
       if (field._path.value === null)
         return null
 
       return get(form.value, field._path.value)
     })
 
-    field.value = computed(() => toValue(field.attrs.modelValue.value))
-    field.attrs.isValid = computed<boolean>(() => {
+    field.value = computed(() => toValue(field.modelValue.value))
+    field.isValid = computed<boolean>(() => {
       if (field._path.value === null)
         return false
 
       return get(errors.value, field._path.value) === undefined
     })
 
-    field.attrs.isDirty = computed<boolean>(() => {
+    field.isDirty = computed<boolean>(() => {
       if (field._path.value === null)
         return false
 
@@ -388,19 +382,19 @@ export function useForm<TSchema extends StandardSchemaV1>(
       //   return currentFile.name !== initialFile?.name
       // }
 
-      if (field.attrs.modelValue.value === '' && initialValue === null)
+      if (field.modelValue.value === '' && initialValue === null)
         return false
 
-      return JSON.stringify(field.attrs.modelValue.value) !== JSON.stringify(initialValue)
+      return JSON.stringify(field.modelValue.value) !== JSON.stringify(initialValue)
     })
 
-    field.attrs.isTouched = computed<boolean>(() => {
+    field.isTouched = computed<boolean>(() => {
       if (field._path.value === null)
         return false
 
       const children = getChildPaths(field._path.value)
 
-      const areAnyOfItsChildrenTouched = children.some(child => child.attrs.isTouched)
+      const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
 
       if (areAnyOfItsChildrenTouched)
         return true
@@ -411,15 +405,11 @@ export function useForm<TSchema extends StandardSchemaV1>(
       return false
     })
 
-    field.attrs.errors = computed<ZodFormattedError<TSchema>>(() => {
+    field.errors = computed<ZodFormattedError<TSchema>>(() => {
       if (field._path.value === null)
         return {}
 
       return get(errors.value, field._path.value)
-    })
-
-    field.errors = computed<ZodFormattedError<TSchema>>(() => {
-      return toValue(field.attrs.errors) as ZodFormattedError<TSchema>
     })
 
     return field
@@ -455,7 +445,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
       }
 
       // Check if value of the field is null or empty array, if so, set default value
-      const isEmpty = field.attrs.modelValue.value === null || (Array.isArray(field.attrs.modelValue.value) && field.attrs.modelValue.value.length === 0)
+      const isEmpty = field.modelValue.value === null || (Array.isArray(field.modelValue.value) && field.modelValue.value.length === 0)
 
       if (isEmpty && defaultValue !== undefined)
         field.setValue(clonedDefaultValue)
@@ -580,7 +570,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
   const blurAll = (): void => {
     for (const field of registeredFields.values())
-      field.attrs.onBlur()
+      field.onBlur()
   }
 
   const submit = async (): Promise<void> => {

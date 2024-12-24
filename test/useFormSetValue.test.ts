@@ -3,7 +3,7 @@ import { useForm } from '../src/lib/useForm'
 import { basicSchema, objectSchema } from './testUtils'
 
 describe('set a value of a field', () => {
-  it('should set a value of a field with `onUpdate:attrs.modelValue.value`', () => {
+  it('should set a value of a field with `onUpdate.modelValue.value`', () => {
     const form = useForm({
       schema: basicSchema,
       onSubmit: (data) => {
@@ -13,9 +13,9 @@ describe('set a value of a field', () => {
 
     const name = form.register('name')
 
-    name.attrs['onUpdate:modelValue']('John')
+    name['onUpdate:modelValue']('John')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -34,7 +34,7 @@ describe('set a value of a field', () => {
 
     name.setValue('John')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -55,7 +55,7 @@ describe('set a value of a field', () => {
       name: 'John',
     })
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       name: 'John',
@@ -78,7 +78,7 @@ describe('set a value of a field', () => {
       },
     })
 
-    expect(b.attrs.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toEqual('John')
 
     expect(form.state.value).toEqual({
       a: {

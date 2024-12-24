@@ -38,7 +38,7 @@ describe('isDirty', () => {
 
     const name = form.register('name', 'John')
 
-    expect(name.attrs.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toEqual(false)
     expect(form.isDirty.value).toEqual(false)
   })
 
@@ -54,7 +54,7 @@ describe('isDirty', () => {
 
     name.setValue('John')
 
-    expect(name.attrs.isDirty.value).toEqual(true)
+    expect(name.isDirty.value).toEqual(true)
     expect(form.isDirty.value).toEqual(true)
   })
 
@@ -71,7 +71,7 @@ describe('isDirty', () => {
     name.setValue('John')
     name.setValue(null)
 
-    expect(name.attrs.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toEqual(false)
     expect(form.isDirty.value).toEqual(false)
   })
 
@@ -88,7 +88,7 @@ describe('isDirty', () => {
     name.setValue('Joe')
     name.setValue('John')
 
-    expect(name.attrs.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toEqual(false)
     expect(form.isDirty.value).toEqual(false)
   })
 
@@ -107,7 +107,7 @@ describe('isDirty', () => {
 
     await form.submit()
 
-    expect(name.attrs.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toEqual(false)
     expect(form.isDirty.value).toEqual(false)
   })
 })

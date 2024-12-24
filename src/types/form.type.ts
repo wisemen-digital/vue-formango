@@ -1,4 +1,4 @@
-import type { z } from 'zod'
+import { type z } from 'zod'
 import type { ComputedRef, Ref } from 'vue'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { DeepPartial } from './utils.type'
@@ -8,71 +8,6 @@ export type MaybePromise<T> = T | Promise<T>
 
 type ArrayElement<ArrayType extends any[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never
-
-interface FieldAttributes<TValue, TDefaultValue = undefined> {
-  /**
-   * The current value of the field.
-   */
-  modelValue: ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
-  /**
-  * The errors associated with the field and its children.
-  */
-  errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
-  /**
-  * Indicates whether the field has any errors.
-  */
-  isValid: ComputedRef<boolean>
-  /**
-  * Indicates whether the field has been touched (blurred).
-  */
-  isTouched: ComputedRef<boolean>
-  /**
-  * Indicates whether the field has been changed.
-  * This flag will remain `true` even if the field value is set back to its initial value.
-  */
-  isChanged: Ref<boolean>
-  /**
-  * Indicates whether the field value is different from its initial value.
-  */
-  isDirty: ComputedRef<boolean>
-  /**
-  * Updates the current value of the field.
-  *
-  * @param value The new value of the field.
-  */
-  'onUpdate:modelValue': (value: TValue | null) => void
-  /**
-   * Called when the field input is blurred.
-   */
-  onBlur: () => void
-  /**
-   * Called when the field input value is changed.
-  */
-  onChange: () => void
-}
-
-interface FieldArrayAttributes<TValue> {
-  /**
-   * The current value of the field.
-   */
-  modelValue: ComputedRef<TValue>
-  /**
-  * The errors associated with the field and its children.
-  */
-  errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
-  /**
-  * Indicates whether the field has any errors.
-  */
-  isValid: ComputedRef<boolean>
-  /**
-  * Indicates whether the field has been touched (blurred).
-  */
-  isTouched: ComputedRef<boolean>
-  /**
-  * Indicates whether the field value is different from its initial value.
-  */
-  isDirty: ComputedRef<boolean>
-}
 
 /**
  * Represents a form field.
@@ -95,6 +30,17 @@ export interface Field<TValue, TDefaultValue = undefined> {
   _isTouched: Ref<boolean>
   /**
    * The current value of the field.
+   */
+  modelValue: ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
+  /**
+    * Updates the current value of the field.
+    *
+    * @param value The new value of the field.
+    */
+  'onUpdate:modelValue': (value: TValue | null) => void
+
+  /**
+   * The current value of the field.
    *
    * This is an alias of `attrs.modelValue`.
   */
@@ -104,6 +50,32 @@ export interface Field<TValue, TDefaultValue = undefined> {
   */
   errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
   /**
+    * Indicates whether the field has any errors.
+    */
+  isValid: ComputedRef<boolean>
+  /**
+    * Indicates whether the field has been touched (blurred).
+    */
+  isTouched: ComputedRef<boolean>
+  /**
+    * Indicates whether the field has been changed.
+    * This flag will remain `true` even if the field value is set back to its initial value.
+    */
+  isChanged: Ref<boolean>
+  /**
+    * Indicates whether the field value is different from its initial value.
+    */
+  isDirty: ComputedRef<boolean>
+  /**
+     * Called when the field input is blurred.
+     */
+  onBlur: () => void
+  /**
+     * Called when the field input value is changed.
+    */
+  onChange: () => void
+
+  /**
    * Sets the current value of the field.
    *
    * This is an alias of `onUpdate:modelValue`.
@@ -111,10 +83,6 @@ export interface Field<TValue, TDefaultValue = undefined> {
    * @param value The new value of the field.
    */
   setValue: (value: TValue | null) => void
-  /**
-   * The attributes of the field you can use to interact with the field.
-   */
-  attrs: FieldAttributes<TValue, TDefaultValue>
   register: <
     TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
     TChildPath extends FieldPath<TValueAsFieldValues>,
@@ -160,9 +128,21 @@ export interface FieldArray<TValue extends any[]> {
    */
   errors: ComputedRef<z.ZodFormattedError<TValue> | undefined>
   /**
-   * The attributes of the field you can use to interact with the field.
+   * The current value of the field.
    */
-  attrs: FieldArrayAttributes<TValue>
+  modelValue: ComputedRef<TValue>
+  /**
+  * Indicates whether the field has any errors.
+  */
+  isValid: ComputedRef<boolean>
+  /**
+  * Indicates whether the field has been touched (blurred).
+  */
+  isTouched: ComputedRef<boolean>
+  /**
+  * Indicates whether the field value is different from its initial value.
+  */
+  isDirty: ComputedRef<boolean>
   /**
    * The current value of the field.
    *

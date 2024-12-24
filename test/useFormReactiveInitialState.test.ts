@@ -19,7 +19,7 @@ describe('reactive initial state', () => {
 
     const name = form.register('name')
 
-    expect(name.attrs.modelValue.value).toEqual('John')
+    expect(name.modelValue.value).toEqual('John')
 
     initialState.value = {
       name: 'Joe',
@@ -27,6 +27,6 @@ describe('reactive initial state', () => {
 
     await sleep(0)
 
-    expect(name.attrs.modelValue.value).toEqual('Joe')
+    expect(name.modelValue.value).toEqual('Joe')
   })
 })

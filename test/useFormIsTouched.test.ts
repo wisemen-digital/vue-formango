@@ -13,7 +13,7 @@ describe('isTouched', () => {
 
     const name = form.register('name')
 
-    expect(name.attrs.isTouched.value).toEqual(false)
+    expect(name.isTouched.value).toEqual(false)
   })
 
   it('should be true when `onBlur` is called', () => {
@@ -26,9 +26,9 @@ describe('isTouched', () => {
 
     const name = form.register('name')
 
-    name.attrs.onBlur()
+    name.onBlur()
 
-    expect(name.attrs.isTouched.value).toEqual(true)
+    expect(name.isTouched.value).toEqual(true)
   })
 
   it('should be touched when a child field is touched', () => {
@@ -42,8 +42,8 @@ describe('isTouched', () => {
     const a = form.register('a')
     const b = a.register('b')
 
-    b.attrs.onBlur()
+    b.onBlur()
 
-    expect(a.attrs.isTouched.value).toEqual(true)
+    expect(a.isTouched.value).toEqual(true)
   })
 })

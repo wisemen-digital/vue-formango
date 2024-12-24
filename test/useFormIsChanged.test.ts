@@ -14,7 +14,7 @@ describe('isChanged', () => {
 
     const name = form.register('name')
 
-    expect(name.attrs.isChanged.value).toEqual(false)
+    expect(name.isChanged.value).toEqual(false)
   })
 
   it('should be true when `onChange` is called', () => {
@@ -27,8 +27,8 @@ describe('isChanged', () => {
 
     const name = form.register('name')
 
-    name.attrs.onChange()
+    name.onChange()
 
-    expect(name.attrs.isChanged.value).toEqual(true)
+    expect(name.isChanged.value).toEqual(true)
   })
 })
