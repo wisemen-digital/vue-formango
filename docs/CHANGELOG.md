@@ -5,6 +5,8 @@
 ### Major changes
 
 - Form is now the root object that is returned by useForm, instead { form, ... }
+- FieldArray type now requires a single generic to be passed, instead of an array of it
+- FieldArray now returns a type with generic never if passed a non-array path
 - Added onSubmitError callback to useForm, which passes the data and errors to the callback function
 - Added onSubmit callback to useForm, which passes the data to the callback function
 - Added rawErrors to useForm, which is an array of objects with a message and path, which are the raw errors from StandardSchemaV1

@@ -5,9 +5,6 @@ import type { StandardSchemaV1 } from './standardSpec.type'
 
 export type MaybePromise<T> = T | Promise<T>
 
-type ArrayElement<ArrayType extends any[]> =
-  ArrayType extends readonly (infer ElementType)[] ? ElementType : never
-
 /**
  * Represents a form field.
  *
@@ -113,7 +110,7 @@ export interface Field<TValue, TDefaultValue = undefined> {
  *
  * @typeparam T The type of the form schema.
  */
-export interface FieldArray<TValue extends any[]> {
+export interface FieldArray<TValue> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
@@ -129,7 +126,7 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * The errors associated with the field and its children.
    */
-  errors: ComputedRef<FormattedError<TValue>[]>
+  errors: ComputedRef<FormattedError<TValue[]>[]>
   /**
   * The raw errors associated with the field and its children.
   */
@@ -137,7 +134,7 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * The current value of the field.
    */
-  modelValue: ComputedRef<TValue>
+  modelValue: ComputedRef<TValue[]>
   /**
   * Indicates whether the field has any errors.
   */
@@ -160,7 +157,7 @@ export interface FieldArray<TValue extends any[]> {
    * Insert a new field at the given index.
    * @param index The index of the field to insert.
    */
-  insert: (index: number, value?: ArrayElement<TValue>) => void
+  insert: (index: number, value?: TValue) => void
   /**
    * Remove a field at the given index.
    * @param index The index of the field to remove.
@@ -169,11 +166,11 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * Add a new field at the beginning of the array.
    */
-  prepend: (value?: ArrayElement<TValue>) => void
+  prepend: (value?: TValue) => void
   /**
    * Add a new field at the end of the array.
    */
-  append: (value?: ArrayElement<TValue>) => void
+  append: (value?: TValue) => void
   /**
    * Remove the last field of the array.
    */
@@ -193,19 +190,19 @@ export interface FieldArray<TValue extends any[]> {
   /**
    * Set the current value of the field.
    */
-  setValue: (value: TValue) => void
+  setValue: (value: TValue[]) => void
 
   register: <
-    TChildPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
-    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TChildPath> | undefined : never,
+    TChildPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
+    TChildDefaultValue extends TValue[] extends FieldValues ? FieldPathValue<TValue[], TChildPath> | undefined : never,
   >(
     path: TChildPath,
     defaultValue?: TChildDefaultValue
-  ) => TValue extends FieldValues ? Field<FieldPathValue<TValue, TChildPath>, any> : never
+  ) => TValue[] extends FieldValues ? Field<FieldPathValue<TValue[], TChildPath>, any> : never
 
-  registerArray: <TPath extends TValue extends FieldValues ? FieldPath<TValue> : never>(
+  registerArray: <TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never>(
     path: TPath
-  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath>> : never
+  ) => TValue[] extends FieldValues ? FieldArray<FieldPathValue<TValue[], TPath>> : never
 }
 
 export type Register<TSchema> = <
@@ -217,8 +214,9 @@ export type Register<TSchema> = <
 export type RegisterArray<TSchema extends StandardSchemaV1> = <
   TPath extends FieldPath<StandardSchemaV1.InferOutput<TSchema>>,
   TValue extends FieldPathValue<StandardSchemaV1.InferOutput<TSchema>, TPath>,
+  TSingleValue extends TValue extends Array<any> ? TValue[number] : never,
   TDefaultValue extends FieldPathValue<StandardSchemaV1.InferOutput<TSchema>, TPath> | undefined,
->(field: TPath, defaultValue?: TDefaultValue) => FieldArray<TValue>
+>(field: TPath, defaultValue?: TDefaultValue) => FieldArray<TSingleValue>
 
 export type Unregister<T extends StandardSchemaV1> = <
   P extends FieldPath<StandardSchemaV1.InferOutput<T>>,
