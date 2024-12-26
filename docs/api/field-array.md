@@ -13,7 +13,7 @@ import { useForm } from 'formango'
 import { arrayFormSchema } from './example.model'
 import ExampleArrayField from './ExampleArrayField.vue'
 
-const { form } = useForm({
+const form = useForm({
   schema: arrayFormSchema,
 })
 
@@ -102,9 +102,9 @@ export type Email = z.infer<typeof emailSchema>
 | move | `Function` | Swaps the position of two elements of the array |
 | empty | `Function` | Empties the array |
 | errors | `Object` | Current errors on the array |
-| isDirty | `Boolean` | Boolean indicating if the array is currently dirty |
-| isValid | `Boolean` | Boolean indicating if the array is currently valid |
-| modelValue | `T` | The value of the array |
+| isDirty | `ComputedRef<Boolean>` | Boolean indicating if the array is currently dirty |
+| isValid | `ComputedRef<Boolean>` | Boolean indicating if the array is currently valid |
+| modelValue | `ComputedRef<T>` | The value of the array |
 | setValue | `Function` | Sets the value of the array |
 | register | `Function` | Function to register any fields under this field |
 
@@ -117,35 +117,49 @@ export type Email = z.infer<typeof emailSchema>
  *
  * @typeparam T The type of the form schema.
  */
-interface FieldArray<TValue extends any[]> {
+export interface FieldArray<TValue extends any[]> {
   /**
    * The current path of the field. This can change if fields are unregistered.
    */
-  _path: string
+  _path: ComputedRef<string | null>
   /**
    * The unique id of the field.
    */
   _id: string
   /**
-   * The current value of the field.
-   */
-  modelValue: TValue
-  /**
    * Array of unique ids of the fields.
    */
-  fields: string[]
+  fields: Ref<string[]>
   /**
    * The errors associated with the field and its children.
    */
-  errors: z.ZodFormattedError<TValue> | undefined
+  errors: ComputedRef<FormattedError<TValue>[]>
   /**
-   * Indicates whether the field has any errors.
-   */
-  isValid: boolean
+  * The raw errors associated with the field and its children.
+  */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
   /**
-   * Indicates whether the field value is different from its initial value.
+   * The current value of the field.
    */
-  isDirty: boolean
+  modelValue: ComputedRef<TValue>
+  /**
+  * Indicates whether the field has any errors.
+  */
+  isValid: ComputedRef<boolean>
+  /**
+  * Indicates whether the field has been touched (blurred).
+  */
+  isTouched: ComputedRef<boolean>
+  /**
+  * Indicates whether the field value is different from its initial value.
+  */
+  isDirty: ComputedRef<boolean>
+  /**
+   * The current value of the field.
+   *
+   * This is an alias of `attrs.modelValue`.
+  */
+  value: ComputedRef<TValue>
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.

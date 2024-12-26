@@ -67,15 +67,13 @@ const exampleForm = z.object({
 
 // Parse the schema to `useForm` along with a function to handle the submit.
 // Optionally, you can also pass an object to prepare the form.
-const { form, onSubmitForm } = useForm({
+const form = useForm({
   schema: exampleForm,
   initialState: {
     name: 'Foo',
     email: 'foo@mail.com',
   },
-})
-
-onSubmitForm((values) => {
+  onSubmit: (data) => {
   /* Values type is inferred from the schema, hande your submit logic here.
     Will only get here if the form is fully valid.
     {
@@ -83,18 +81,36 @@ onSubmitForm((values) => {
       name: string
     }
   */
-  console.log(values)
+    // Handle form submit
+  },
 })
 
 // Now you can register fields on the form, which are fully typed.
 // These fields will handle the actual data-binding
 const name = form.register('name')
 const email = form.register('email')
+
+// A mapper function to map these values to your input
+function toFormField<TValue, TDefaultValue>(field: Field<TValue, TDefaultValue>): {
+  'isTouched': boolean | undefined
+  'errors': ZodFormattedError<TValue>
+  'modelValue': TDefaultValue extends undefined ? TValue | null : TValue
+  'onBlur': () => void
+  'onUpdate:modelValue': (value: TValue | null) => void
+} {
+  return {
+    'isTouched': field.isTouched.value,
+    'errors': formatErrorsToZodFormattedError(field.errors.value),
+    'modelValue': field.modelValue.value,
+    'onBlur': field.onBlur,
+    'onUpdate:modelValue': field['onUpdate:modelValue'],
+  }
+}
 </script>
 
 <template>
-  <CustomInput v-bind="name" />
-  <CustomInput v-bind="email" />
+  <CustomInput v-bind="toFormField(name)" />
+  <CustomInput v-bind="toFormField(email)" />
   <button @click="form.submit">
     Submit
   </button>

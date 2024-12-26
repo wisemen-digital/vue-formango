@@ -39,27 +39,27 @@ export type Address = z.infer<typeof addressSchema>
 <script setup lang="ts">
 import { useForm } from 'formango'
 
+import { toFormField } from './toFormField'
 import AddressForm from './AddressForm.vue'
 import { userSchema } from './userForm.model'
 
-const { form, onSubmitForm } = useForm({
+const form = useForm({
   schema: userSchema,
+  onSubmit: (data) => {
+    // Handle user create
+    console.log(user)
+  }
 })
 
 const email = form.register('email')
 
 const invoiceAddress = form.register('invoiceAddress')
 const shippingAddress = form.register('shippingAddress')
-
-onSubmitForm((user) => {
-  // Handle user create
-  console.log(user)
-})
 </script>
 
 <template>
   <div>
-    <CustomInput v-bind="email" />
+    <CustomInput v-bind="toFormField(email)" />
     <AddressForm
       :address="invoiceAddress"
       label="Invoice Address"
@@ -76,6 +76,7 @@ onSubmitForm((user) => {
 ```vue [AddressForm.vue]
 <script setup lang="ts">
 import type { Field } from 'formango'
+import { toFormField } from './toFormField'
 
 import type { Address } from './address.model'
 
@@ -97,10 +98,10 @@ const postalCode = props.address.register('postalCode')
     <p>
       {{ label }}
     </p>
-    <CustomInput v-bind="street" />
-    <CustomInput v-bind="city" />
-    <CustomInput v-bind="state" />
-    <CustomInput v-bind="postalCode" />
+    <CustomInput v-bind="toFormField(street)" />
+    <CustomInput v-bind="toFormField(city)" />
+    <CustomInput v-bind="toFormField(state)" />
+    <CustomInput v-bind="toFormField(postalCode)" />
   </div>
 </template>
 ```

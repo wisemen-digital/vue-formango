@@ -1,4 +1,4 @@
-// node_modules/.pnpm/vue@3.4.21_typescript@4.9.5/node_modules/vue/dist/vue.runtime.esm-browser.js
+// node_modules/.pnpm/vue@3.4.21_typescript@5.7.2/node_modules/vue/dist/vue.runtime.esm-browser.js
 function makeMap(str, expectsLowerCase) {
   const set2 = new Set(str.split(","));
   return expectsLowerCase ? (val) => set2.has(val.toLowerCase()) : (val) => set2.has(val);
@@ -11191,4 +11191,4 @@ vue/dist/vue.runtime.esm-browser.js:
   **)
   (*! #__NO_SIDE_EFFECTS__ *)
 */
-//# sourceMappingURL=chunk-JGMLBK2F.js.map
+//# sourceMappingURL=chunk-JI5EUS42.js.map

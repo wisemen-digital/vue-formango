@@ -48,7 +48,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
       if (error.path == null)
         return error
 
-      const newPath = error.path.join('.')
+      const newPath = error.path
+        ?.map(item => (typeof item === 'object' ? item.key : item))
+        .join('.')
 
       return {
         message: error.message,
@@ -423,16 +425,23 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
       // Return all errors that have the field path as a prefix
       return rawErrors.value.filter((error) => {
-        if (error.path == null || field._path.value == null)
+        const dottedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+          .join('.')
+
+        if (dottedPath == null || field._path.value == null)
           return false
 
-        return error.path.join('.').startsWith(field._path.value)
+        return dottedPath.startsWith(field._path.value)
       }).map((error) => {
-        if (error.path == null || field._path.value == null)
+        const normalizedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+
+        if (normalizedPath == null || field._path.value == null)
           return error
 
         // Remove the field path from the error path
-        const newPath = error.path.slice(field._path.value.length)
+        const newPath = normalizedPath.slice(field._path.value.length)
 
         return {
           ...error,
@@ -446,19 +455,26 @@ export function useForm<TSchema extends StandardSchemaV1>(
         return []
 
       const formattedErrors = rawErrors.value.filter((error) => {
-        if (error.path == null || field._path.value == null)
+        const dottedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+          .join('.')
+
+        if (dottedPath == null || field._path.value == null)
           return false
 
-        return error.path.join('.').startsWith(field._path.value)
+        return dottedPath.startsWith(field._path.value)
       }).map((error: StandardSchemaV1.Issue) => {
-        if (error.path == null || field._path.value == null) {
+        const normalizedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+
+        if (normalizedPath == null || field._path.value == null) {
           return {
             message: error.message,
             path: null,
           }
         }
 
-        const newPath = error.path.slice(field._path.value.length).join('.')
+        const newPath = normalizedPath.slice(field._path.value.length).join('.')
 
         if (newPath.length === 0) {
           return {

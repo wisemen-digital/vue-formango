@@ -8,10 +8,21 @@ function issueMapper(issue: StandardSchemaV1.Issue | FormattedError<any>) {
 const isZodIssue = (error: any): error is ZodIssue => {
   return error.code !== undefined
 }
+type SomeIssues<TType> = readonly StandardSchemaV1.Issue[] | FormattedError<TType>[]
+type SomeIssue<TType> = StandardSchemaV1.Issue | FormattedError<TType>
 
-export function formatErrorsToZodFormattedError<TType>(issues: readonly StandardSchemaV1.Issue[] | FormattedError<TType>[]): ZodFormattedError<TType> {
+function getNormalizedPathArray<TType>(issue: SomeIssue<TType>): string[] {
+  if (typeof issue.path === 'object') {
+    return issue.path
+      ?.map(item => (typeof item === 'object' ? item.key : item)) as string[]
+  }
+
+  return issue.path as unknown as string[]
+}
+
+export function formatErrorsToZodFormattedError<TType>(issues: SomeIssues<TType>): ZodFormattedError<TType> {
   const fieldErrors: ZodFormattedError<TType> = { _errors: [] } as any
-  const processIssue = (issue: StandardSchemaV1.Issue | FormattedError<TType>) => {
+  const processIssue = (issue: SomeIssue<TType>) => {
     // Handle zod only issue types
     if (isZodIssue(issue)) {
       if (issue.code === 'invalid_union') {
@@ -35,11 +46,14 @@ export function formatErrorsToZodFormattedError<TType>(issues: readonly Standard
     }
 
     // Issue with path gets added to the correct field
+
+    const normalizedPath = getNormalizedPathArray(issue)
+
     let curr: any = fieldErrors
     let i = 0
-    while (i < issue.path.length) {
-      const el = issue.path[i] as string
-      const terminal = i === issue.path.length - 1
+    while (i < normalizedPath.length) {
+      const el = normalizedPath[i]
+      const terminal = i === normalizedPath.length - 1
 
       if (!terminal) {
         curr[el] = curr[el] || { _errors: [] }
