@@ -1,7 +1,8 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { ZodFormattedError, ZodIssue } from 'zod'
+import type { FormattedError } from '../types'
 
-function issueMapper(issue: StandardSchemaV1.Issue) {
+function issueMapper(issue: StandardSchemaV1.Issue | FormattedError<any>) {
   return issue.message
 }
 
@@ -9,9 +10,9 @@ const isZodIssue = (error: any): error is ZodIssue => {
   return error.code !== undefined
 }
 
-export function formatErrorsToZodFormattedError<TType>(issues: readonly StandardSchemaV1.Issue[]): ZodFormattedError<TType> {
+export function formatErrorsToZodFormattedError<TType>(issues: readonly StandardSchemaV1.Issue[] | FormattedError<TType>[]): ZodFormattedError<TType> {
   const fieldErrors: ZodFormattedError<TType> = { _errors: [] } as any
-  const processIssue = (issue: StandardSchemaV1.Issue) => {
+  const processIssue = (issue: StandardSchemaV1.Issue | FormattedError<TType>) => {
     // Handle zod only issue types
     if (isZodIssue(issue)) {
       if (issue.code === 'invalid_union') {
