@@ -1,6 +1,5 @@
-import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { ZodFormattedError, ZodIssue } from 'zod'
-import type { FormattedError } from '../types'
+import type { FormattedError, StandardSchemaV1 } from '../types'
 
 function issueMapper(issue: StandardSchemaV1.Issue | FormattedError<any>) {
   return issue.message

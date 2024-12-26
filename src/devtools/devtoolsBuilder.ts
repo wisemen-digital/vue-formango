@@ -1,62 +1,63 @@
+import type { UnwrapRef } from 'vue'
 import type { Field, Form } from '../types'
 
-export function buildFormState(form: Form<any>) {
+export function buildFormState(form: UnwrapRef<Form<any>>) {
   return {
     'Form state': [
       {
         key: 'state',
-        value: form.state.value,
+        value: form.state,
       },
       {
         key: 'errors',
-        value: form.errors.value,
+        value: form.errors,
       },
       {
         key: 'isDirty',
-        value: form.isDirty.value,
+        value: form.isDirty,
       },
       {
         key: 'hasAttemptedToSubmit',
-        value: form.hasAttemptedToSubmit.value,
+        value: form.hasAttemptedToSubmit,
       },
       {
         key: 'isSubmitting',
-        value: form.isSubmitting.value,
+        value: form.isSubmitting,
       },
       {
         key: 'isValid',
-        value: form.isValid.value,
+        value: form.isValid,
       },
     ],
   }
 }
 
-export function buildFieldState(field: Field<any, any>) {
+export function buildFieldState(field: UnwrapRef<Field<any, any>>) {
   return {
     'Field state': [
       {
         key: 'value',
-        value: field.modelValue.value,
+        value: field.modelValue,
       },
       {
         key: 'path',
-        value: field._path.value,
+        value: field._path,
       },
       {
         key: 'errors',
-        value: field.errors.value,
+        value: field.errors,
       },
       {
         key: 'isChanged',
-        value: field.isChanged.value,
+        value: field.isChanged,
       },
       {
         key: 'isDirty',
-        value: field.isDirty.value,
+        value: field.isDirty,
       },
       {
         key: 'isTouched',
-        value: field.isTouched.value,
+        value: field.isTouched,
       },
     ],
   }

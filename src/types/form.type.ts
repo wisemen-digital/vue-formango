@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { DeepPartial } from './utils.type'
 import type { FieldPath, FieldPathValue, FieldValues } from './eager.type'
+import type { StandardSchemaV1 } from './standardSpec.type'
 
 export type MaybePromise<T> = T | Promise<T>
 

@@ -1,8 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { computed, ref, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
-import type { StandardSchemaV1 } from '@standard-schema/spec'
-import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
+import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
 import { generateId, get, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
