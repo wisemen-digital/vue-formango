@@ -23,7 +23,7 @@ interface UseFormOptions<TSchema extends StandardSchemaV1> {
      * Called when the form is attempted to be submitted, but is invalid.
      * Only called for client-side validation.
      */
-  onSubmitError?: () => void
+  onSubmitError?: ({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void
 }
 
 export function useForm<TSchema extends StandardSchemaV1>(
@@ -58,7 +58,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
   })
 
   const onSubmitCb: ((data: StandardSchemaV1.InferOutput<TSchema>) => MaybePromise<void>) | null = onSubmit
-  const onSubmitFormErrorCb: (() => void) | undefined = onSubmitError
+  const onSubmitFormErrorCb: (({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void) | undefined = onSubmitError
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
@@ -643,7 +643,10 @@ export function useForm<TSchema extends StandardSchemaV1>(
     blurAll()
 
     if (!isValid.value) {
-      onSubmitFormErrorCb?.()
+      onSubmitFormErrorCb?.({
+        data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
+        errors: formattedErrors.value,
+      })
       return
     }
 

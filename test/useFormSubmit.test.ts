@@ -75,7 +75,36 @@ describe('submit', () => {
       onSubmitError: () => {
         isCalled = true
       },
+    })
 
+    form.register('name', 'Jon')
+
+    await sleep(0)
+    await form.submit()
+
+    expect(isCalled).toEqual(true)
+  })
+
+  it('should call `onSubmitError` if there are errors and pass data and errors to the callback function', async () => {
+    let isCalled = false
+
+    const form = useForm({
+      schema: basicSchema,
+      onSubmit: (data) => {
+        return data
+      },
+      onSubmitError: ({ data, errors }) => {
+        expect(data).toEqual({
+          name: 'Jon',
+        })
+        expect(errors).toEqual([
+          {
+            message: 'String must contain at least 4 character(s)',
+            path: 'name',
+          },
+        ])
+        isCalled = true
+      },
     })
 
     form.register('name', 'Jon')
