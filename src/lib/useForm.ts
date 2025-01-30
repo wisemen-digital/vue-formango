@@ -674,7 +674,16 @@ export function useForm<TSchema extends StandardSchemaV1>(
     if (onSubmitCb == null)
       throw new Error('Attempted to submit form but `onSubmitForm` callback is not registered')
 
-    await onSubmitCb(schema['~standard'].validate(form.value))
+    const validatedResult = await schema['~standard'].validate(form.value)
+    if (validatedResult.issues) {
+      onSubmitFormErrorCb?.({
+        data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
+        errors: formattedErrors.value,
+      })
+      return
+    }
+
+    await onSubmitCb(validatedResult.value)
 
     initialFormState.value = deepClone(currentFormState.value) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
 

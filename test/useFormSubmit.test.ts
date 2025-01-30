@@ -22,6 +22,33 @@ describe('submit', () => {
     expect(form.hasAttemptedToSubmit.value).toEqual(true)
   })
 
+  it('should submit with data', async () => {
+    let submitted = false
+    let submittedData = null
+    const form = useForm({
+      schema: basicSchema,
+      onSubmit: (data) => {
+        submitted = true
+        submittedData = data
+
+        return data
+      },
+    })
+
+    form.register('name', 'John')
+
+    await sleep(0)
+
+    form.submit()
+
+    await sleep(0)
+
+    expect(submitted).toEqual(true)
+    expect(submittedData).toEqual({
+      name: 'John',
+    })
+  })
+
   it('should blur all fields', async () => {
     const form = useForm({
       schema: basicSchema,
@@ -47,9 +74,6 @@ describe('submit', () => {
       schema: basicSchema,
       onSubmit: (data) => {
         submitted = true
-        expect(data).toEqual({
-          name: 'Jon',
-        })
 
         return data
       },
@@ -87,6 +111,8 @@ describe('submit', () => {
 
   it('should call `onSubmitError` if there are errors and pass data and errors to the callback function', async () => {
     let isCalled = false
+    let submittedErrorData = null
+    let submittedErrors = null
 
     const form = useForm({
       schema: basicSchema,
@@ -94,16 +120,9 @@ describe('submit', () => {
         return data
       },
       onSubmitError: ({ data, errors }) => {
-        expect(data).toEqual({
-          name: 'Jon',
-        })
-        expect(errors).toEqual([
-          {
-            message: 'String must contain at least 4 character(s)',
-            path: 'name',
-          },
-        ])
         isCalled = true
+        submittedErrorData = data
+        submittedErrors = errors
       },
     })
 
@@ -111,6 +130,17 @@ describe('submit', () => {
 
     await sleep(0)
     await form.submit()
+
+    expect(submittedErrorData).toEqual({
+      name: 'Jon',
+    })
+
+    expect(submittedErrors).toEqual([
+      {
+        message: 'String must contain at least 4 character(s)',
+        path: 'name',
+      },
+    ])
 
     expect(isCalled).toEqual(true)
   })
