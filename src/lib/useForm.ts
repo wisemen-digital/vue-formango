@@ -738,6 +738,10 @@ export function useForm<TSchema extends StandardSchemaV1>(
       throw new Error('In order to reset the form, you need to provide an initial state')
 
     Object.assign(form.value, deepClone(toValue(initialState)))
+    registeredFields.forEach((field) => {
+      field._isTouched.value = false
+    })
+
     hasAttemptedToSubmit.value = false
   }
 
