@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { useForm } from '../src/lib/useForm'
-import { basicSchema, objectSchema, sleep } from './testUtils'
+import { basicSchema, basicWithSimilarNamesSchema, objectSchema, sleep } from './testUtils'
 
 describe('errors', () => {
   it('should not have any errors when all fields are valid', async () => {
@@ -295,4 +295,53 @@ describe('errors', () => {
       },
     ])
   })
+
+  it('fields with a similar name should not have shared errors', async () => {
+    const form = useForm({
+      schema: basicWithSimilarNamesSchema,
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    const nameFirst = form.register('nameFirst', 'a')
+    const nameSecond = form.register('nameSecond', 'a')
+    const name = form.register('name', 'a')
+
+    await sleep(0)
+
+    expect(nameFirst.errors.value).toEqual([{
+      message: 'String must contain at least 4 character(s)',
+      path: null,
+    }])
+    expect(nameSecond.errors.value).toEqual([{
+      message: 'String must contain at least 4 character(s)',
+      path: null,
+    }])
+    expect(name.errors.value).toEqual([])
+  })
+})
+
+it('fields should share errors with its parents', async () => {
+  const form = useForm({
+    schema: objectSchema,
+    onSubmit: (data) => {
+      return data
+    },
+  })
+
+  const aBObjC = form.register('a.bObj.c')
+  const aBObj = form.register('a.bObj')
+  const a = form.register('a')
+  const ab = form.register('a.b')
+
+  await sleep(0)
+
+  expect(aBObjC.errors.value).toEqual([{ message: 'Expected string, received null', path: null }])
+  expect(aBObj.errors.value).toEqual([{ message: 'Expected string, received null', path: 'c' }])
+  expect(ab.errors.value).toEqual([{ message: 'Expected string, received null', path: null }])
+  expect(a.errors.value).toEqual([
+    { message: 'Expected string, received null', path: 'b' },
+    { message: 'Expected string, received null', path: 'bObj.c' },
+  ])
 })

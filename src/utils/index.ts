@@ -150,3 +150,25 @@ export function throttle<T extends (...args: any) => any>(func: T, limit: number
     return lastResult
   }
 }
+
+export function isSubPath({
+  childPath,
+  parentPath,
+}: {
+  childPath: string
+  parentPath: string
+}): { isPart: boolean; relativePath?: string } {
+  const childSegments = childPath.split('.')
+  const parentSegments = parentPath.split('.')
+
+  if (childSegments.length <= parentSegments.length)
+    return { isPart: false }
+
+  for (let i = 0; i < parentSegments.length; i++) {
+    if (childSegments[i] !== parentSegments[i])
+      return { isPart: false }
+  }
+
+  const relativePath = childSegments.slice(parentSegments.length).join('.')
+  return { isPart: true, relativePath }
+}
