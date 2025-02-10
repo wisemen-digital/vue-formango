@@ -4,6 +4,12 @@ export const basicSchema = z.object({
   name: z.string().min(4),
 })
 
+export const basicWithSimilarNamesSchema = z.object({
+  nameFirst: z.string().min(4),
+  nameSecond: z.string().min(4),
+  name: z.string(),
+})
+
 export const objectSchema = z.object({
   a: z.object({
     b: z.string(),

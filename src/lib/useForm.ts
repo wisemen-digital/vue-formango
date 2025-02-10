@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { computed, ref, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
 import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
-import { generateId, get, set, unset } from '../utils'
+import { generateId, get, isSubPath, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
 interface UseFormOptions<TSchema extends StandardSchemaV1> {
@@ -94,7 +94,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
     ].some(field => field.isDirty.value)
   })
 
-  const isValid = computed<boolean>(() => Object.keys(rawErrors.value).length === 0)
+  const isValid = computed<boolean>(() => {
+    return rawErrors.value.length === 0
+  })
 
   watch(() => toValue(initialState), (newInitialState) => {
     if (!isDirty.value && newInitialState != null) {
@@ -380,7 +382,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
       if (field._path.value === null)
         return false
 
-      return get(rawErrors.value, field._path.value) === undefined
+      return field.rawErrors.value.length === 0
     })
 
     field.isDirty = computed<boolean>(() => {
@@ -424,7 +426,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
         return []
 
       // Return all errors that have the field path as a prefix
-      return rawErrors.value.filter((error) => {
+      const filteredRawErrors = rawErrors.value.filter((error) => {
         const dottedPath = error.path
           ?.map(item => (typeof item === 'object' ? item.key : item))
           .join('.')
@@ -432,7 +434,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
         if (dottedPath == null || field._path.value == null)
           return false
 
-        return dottedPath.startsWith(field._path.value)
+        const { isPart } = isSubPath({
+          childPath: dottedPath,
+          parentPath: field._path.value,
+        })
+
+        if (dottedPath === field._path.value)
+          return true
+
+        return isPart
       }).map((error) => {
         const normalizedPath = error.path
           ?.map(item => (typeof item === 'object' ? item.key : item))
@@ -440,14 +450,28 @@ export function useForm<TSchema extends StandardSchemaV1>(
         if (normalizedPath == null || field._path.value == null)
           return error
 
+        const joinedNormalizedPath = normalizedPath.join('.')
+        const { isPart, relativePath } = isSubPath({
+          childPath: joinedNormalizedPath,
+          parentPath: field._path.value,
+        })
+
+        if (!isPart) {
+          return {
+            ...error,
+            path: [],
+          }
+        }
+
         // Remove the field path from the error path
-        const newPath = normalizedPath.slice(field._path.value.length)
 
         return {
           ...error,
-          path: newPath,
+          path: relativePath?.split('.') ?? [],
         }
       })
+
+      return filteredRawErrors
     })
 
     field.errors = computed<FormattedError<any>[]>(() => {
@@ -462,7 +486,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
         if (dottedPath == null || field._path.value == null)
           return false
 
-        return dottedPath.startsWith(field._path.value)
+        const { isPart } = isSubPath({
+          childPath: dottedPath,
+          parentPath: field._path.value,
+        })
+
+        if (dottedPath === field._path.value)
+          return true
+
+        return isPart
       }).map((error: StandardSchemaV1.Issue) => {
         const normalizedPath = error.path
           ?.map(item => (typeof item === 'object' ? item.key : item))
@@ -474,9 +506,22 @@ export function useForm<TSchema extends StandardSchemaV1>(
           }
         }
 
-        const newPath = normalizedPath.slice(field._path.value.length).join('.')
+        const joinedNormalizedPath = normalizedPath.join('.')
 
-        if (newPath.length === 0) {
+        if (joinedNormalizedPath === field._path.value) {
+          return {
+            message: error.message,
+            path: null,
+
+          }
+        }
+
+        const { isPart, relativePath } = isSubPath({
+          childPath: joinedNormalizedPath,
+          parentPath: field._path.value,
+        })
+
+        if (!isPart) {
           return {
             message: error.message,
             path: null,
@@ -485,7 +530,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
         return {
           message: error.message,
-          path: newPath,
+          path: relativePath,
         }
       })
 
