@@ -232,12 +232,12 @@ export function useForm<TSchema extends StandardSchemaV1>(
       fields.value.push(fieldId)
     }
 
-    const insert = (index: number, value: unknown) => {
+    const insert = (index: number, value: unknown): Field<any, any> => {
       const path = paths.value.get(id) as string
 
       fields.value[index] = generateId()
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      register(`${path}.${index}` as Path<TSchema>, value as any)
+      return register(`${path}.${index}` as Path<TSchema>, value as any)
     }
 
     const remove = (index: number): void => {
@@ -253,8 +253,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
       insert(0, value)
     }
 
-    const append = (value: unknown): void => {
-      insert(fields.value.length, value)
+    const append = (value: unknown): Field<any, any> => {
+      console.log('length', fields.value.length)
+      return insert(fields.value.length, value)
     }
 
     const pop = (): void => {
@@ -338,8 +339,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
         const currentPath = paths.value.get(id) as string
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return register(fullPath, defaultValue) as Field<any, any>
+        const field = register(fullPath, defaultValue) as Field<any, any>
+
+        return field
       },
       registerArray: (childPath) => {
         const currentPath = paths.value.get(id) as string

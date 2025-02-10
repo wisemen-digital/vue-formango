@@ -202,7 +202,7 @@ export interface FieldArray<TValue> {
 
   registerArray: <TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never>(
     path: TPath
-  ) => TValue[] extends FieldValues ? FieldArray<FieldPathValue<TValue[], TPath>> : never
+  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath extends FieldPath<TValue> ? TPath : never>> : never
 }
 
 export type Register<TSchema> = <
