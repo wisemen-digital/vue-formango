@@ -20,9 +20,9 @@ interface UseFormOptions<TSchema extends StandardSchemaV1> {
    */
   onSubmit: (data: StandardSchemaV1.InferOutput<TSchema>) => void
   /**
-     * Called when the form is attempted to be submitted, but is invalid.
-     * Only called for client-side validation.
-     */
+   * Called when the form is attempted to be submitted, but is invalid.
+   * Only called for client-side validation.
+   */
   onSubmitError?: ({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void
 }
 
