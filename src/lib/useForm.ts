@@ -13,7 +13,7 @@ interface UseFormOptions<TSchema extends StandardSchemaV1> {
   /**
    * The initial state of the form
    */
-  initialState?: MaybeRefOrGetter<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>
+  initialState?: MaybeRefOrGetter<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>> | null>
   /**
    * Called when the form is valid and submitted.
    * @param data The current form data.
