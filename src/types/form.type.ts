@@ -152,7 +152,7 @@ export interface FieldArray<TValue> {
    *
    * This is an alias of `attrs.modelValue`.
   */
-  value: ComputedRef<TValue>
+  value: ComputedRef<TValue[]>
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.

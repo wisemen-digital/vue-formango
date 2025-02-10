@@ -238,6 +238,36 @@ describe('register a field or fieldArray', () => {
     })
   })
 
+  it('nested new test', () => {
+    const form = useForm({
+      schema: twoDimensionalArraySchema,
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    // This typing shouldn't error!
+    const test = form.registerArray('array')
+    const test2 = test.registerArray('0')
+    const test3 = test2.register('0')
+    const name = test3.register('name', 'John')
+
+    // test2.append([{ name: 'John' }])
+    // test3.append({ name: 'John' })
+
+    expect(name.modelValue.value).toEqual('John')
+
+    expect(form.state.value).toEqual({
+      array: [
+        [
+          {
+            name: 'John',
+          },
+        ],
+      ],
+    })
+  })
+
   it('should register a field as a fieldArray', () => {
     const form = useForm({
       schema: basicArraySchema,
