@@ -27,16 +27,14 @@ describe('unregister a field or fieldArray', () => {
     })
 
     const array = form.registerArray('array')
-    array.append('John') // ['John']
-    array.register('0') // ['John']
+    array.append('John')
+    array.register('0')
 
-    array.remove(0) // []
+    array.remove(0)
 
-    array.append('Doe') // ['Doe']
+    array.append('Doe')
 
-    array.register('0') // ['Doe']
-
-    // [null, 'Doe', null]
+    array.register('0')
 
     expect(form.state.value).toEqual({
       array: ['Doe'],
