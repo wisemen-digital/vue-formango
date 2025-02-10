@@ -254,7 +254,6 @@ export function useForm<TSchema extends StandardSchemaV1>(
     }
 
     const append = (value: unknown): Field<any, any> => {
-      console.log('length', fields.value.length)
       return insert(fields.value.length, value)
     }
 

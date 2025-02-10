@@ -45,4 +45,14 @@ export const twoDimensionalArraySchema = z.object({
   ),
 })
 
+export const nestedArraySchema = z.object({
+  users: z.array(
+    z.array(
+      z.object({
+        name: z.string(),
+      }),
+    ),
+  ),
+})
+
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
