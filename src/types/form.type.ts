@@ -300,6 +300,10 @@ export interface Form<TSchema extends StandardSchemaV1> {
    * Resets the form to the initial state.
    */
   reset: () => void
+  /**
+   * Blurs all inputs in the form.
+   */
+  blurAll: () => void
 }
 
 /**

@@ -813,6 +813,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     setValues,
     addErrors,
     reset,
+    blurAll,
   }
 
   registerFormWithDevTools(formObject)
