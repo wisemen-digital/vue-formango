@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { computed, ref, toValue, watch } from 'vue'
+import { computed, ref, shallowReactive, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
 import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
 import { generateId, get, isSubPath, set, unset } from '../utils'
@@ -81,8 +81,8 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
   // Tracks all the registered fields
   // Used so that we don't need to re-register a field when it is already registered
-  const registeredFields = new Map<string, Field<any, any>>()
-  const registeredFieldArrays = new Map<string, FieldArray<any>>()
+  const registeredFields = shallowReactive(new Map<string, Field<any, any>>())
+  const registeredFieldArrays = shallowReactive(new Map<string, FieldArray<any>>())
 
   if (initialState != null)
     Object.assign(form.value, deepClone(toValue(initialState)))
@@ -91,7 +91,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => field.isDirty.value)
+    ].some(field => toValue(field.isDirty))
   })
 
   const isValid = computed<boolean>(() => {
@@ -802,7 +802,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
     errors: computed(() => formattedErrors.value),
     rawErrors: computed(() => rawErrors.value) as ComputedRef<StandardSchemaV1.Issue[]>,
-    isDirty,
+    isDirty: computed(() => isDirty.value),
     isValid,
     isSubmitting: computed(() => isSubmitting.value),
     hasAttemptedToSubmit: computed(() => hasAttemptedToSubmit.value),
