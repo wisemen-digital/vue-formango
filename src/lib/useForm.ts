@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { computed, ref, toValue, watch } from 'vue'
+import { computed, ref, shallowReactive, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
 import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
 import { generateId, get, isSubPath, set, unset } from '../utils'
@@ -81,8 +81,8 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
   // Tracks all the registered fields
   // Used so that we don't need to re-register a field when it is already registered
-  const registeredFields = new Map<string, Field<any, any>>()
-  const registeredFieldArrays = new Map<string, FieldArray<any>>()
+  const registeredFields = shallowReactive(new Map<string, Field<any, any>>())
+  const registeredFieldArrays = shallowReactive(new Map<string, FieldArray<any>>())
 
   if (initialState != null)
     Object.assign(form.value, deepClone(toValue(initialState)))
@@ -91,7 +91,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => field.isDirty.value)
+    ].some(field => toValue(field.isDirty))
   })
 
   const isValid = computed<boolean>(() => {
@@ -232,12 +232,12 @@ export function useForm<TSchema extends StandardSchemaV1>(
       fields.value.push(fieldId)
     }
 
-    const insert = (index: number, value: unknown) => {
+    const insert = (index: number, value: unknown): Field<any, any> => {
       const path = paths.value.get(id) as string
 
       fields.value[index] = generateId()
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      register(`${path}.${index}` as Path<TSchema>, value as any)
+      return register(`${path}.${index}` as Path<TSchema>, value as any)
     }
 
     const remove = (index: number): void => {
@@ -253,8 +253,8 @@ export function useForm<TSchema extends StandardSchemaV1>(
       insert(0, value)
     }
 
-    const append = (value: unknown): void => {
-      insert(fields.value.length, value)
+    const append = (value: unknown): Field<any, any> => {
+      return insert(fields.value.length, value)
     }
 
     const pop = (): void => {
@@ -338,16 +338,28 @@ export function useForm<TSchema extends StandardSchemaV1>(
         const currentPath = paths.value.get(id) as string
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return register(fullPath, defaultValue) as Field<any, any>
+        const field = register(fullPath, defaultValue) as Field<any, any>
+
+        return field
       },
-      registerArray: (childPath) => {
+      registerArray: (childPath, defaultValue) => {
         const currentPath = paths.value.get(id) as string
 
         const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
 
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return registerArray(fullPath) as FieldArray<any>
+        return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
     })
 
@@ -795,7 +807,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
     errors: computed(() => formattedErrors.value),
     rawErrors: computed(() => rawErrors.value) as ComputedRef<StandardSchemaV1.Issue[]>,
-    isDirty,
+    isDirty: computed(() => isDirty.value),
     isValid,
     isSubmitting: computed(() => isSubmitting.value),
     hasAttemptedToSubmit: computed(() => hasAttemptedToSubmit.value),
@@ -806,6 +818,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     setValues,
     addErrors,
     reset,
+    blurAll,
   }
 
   registerFormWithDevTools(formObject)

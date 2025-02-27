@@ -96,13 +96,21 @@ export interface Field<TValue, TDefaultValue = undefined> {
   >
 
   registerArray: <
-    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
-    TPath extends FieldPath<TValueAsFieldValues>,
-    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
+    TPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
+    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TPath> | undefined : never,
   >(
     path: TPath,
     defaultValue?: TChildDefaultValue,
-  ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
+  ) => FieldArray<FieldPathValue<TValue, TPath> extends Array<any> ? FieldPathValue<TValue, TPath>[number] : never>
+
+  // registerArray: <
+  //   TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+  //   TPath extends FieldPath<TValueAsFieldValues>,
+  //   TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
+  // >(
+  //   path: TPath,
+  //   defaultValue?: TChildDefaultValue,
+  // ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
 
 /**
@@ -152,7 +160,7 @@ export interface FieldArray<TValue> {
    *
    * This is an alias of `attrs.modelValue`.
   */
-  value: ComputedRef<TValue>
+  value: ComputedRef<TValue[]>
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.
@@ -200,9 +208,13 @@ export interface FieldArray<TValue> {
     defaultValue?: TChildDefaultValue
   ) => TValue[] extends FieldValues ? Field<FieldPathValue<TValue[], TChildPath>, any> : never
 
-  registerArray: <TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never>(
-    path: TPath
-  ) => TValue[] extends FieldValues ? FieldArray<FieldPathValue<TValue[], TPath>> : never
+  registerArray: <
+    TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
+    TChildDefaultValue extends TValue[] extends FieldValues ? FieldPathValue<TValue[], TPath> | undefined : never,
+  >(
+    path: TPath,
+    defaultValue?: TChildDefaultValue,
+  ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath extends FieldPath<TValue> ? TPath : never>> : never
 }
 
 export type Register<TSchema> = <
@@ -300,6 +312,10 @@ export interface Form<TSchema extends StandardSchemaV1> {
    * Resets the form to the initial state.
    */
   reset: () => void
+  /**
+   * Blurs all inputs in the form.
+   */
+  blurAll: () => void
 }
 
 /**
