@@ -54,5 +54,8 @@ export const nestedArraySchema = z.object({
     ),
   ),
 })
+export const fieldWithArraySchema = z.object({
+  field: z.object({ array: z.array(z.string()) }),
+})
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))

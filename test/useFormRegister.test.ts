@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { useForm } from '../src/lib/useForm'
-import { basic2DArraySchema, basicArraySchema, basicSchema, objectArraySchema, objectSchema, twoDimensionalArraySchema } from './testUtils'
+import { basic2DArraySchema, basicArraySchema, basicSchema, fieldWithArraySchema, objectArraySchema, objectSchema, twoDimensionalArraySchema } from './testUtils'
 
 describe('register a field or fieldArray', () => {
   it('should register a field', () => {
@@ -332,5 +332,68 @@ describe('register a field or fieldArray', () => {
     array.register('0', ['John'])
 
     expect(array.modelValue.value).toEqual([['John']])
+  })
+
+  it('should be able to register a field that registers an array field', () => {
+    const form = useForm({
+      schema: fieldWithArraySchema,
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    const field = form.register('field')
+    const array = field.registerArray('array', [])
+
+    expect(array.modelValue.value).toEqual([])
+    expect(field.modelValue.value).toEqual({
+      array: [],
+    })
+
+    array.append('John')
+
+    expect(array.modelValue.value).toEqual(['John'])
+    expect(field.modelValue.value).toEqual({ array: ['John'] })
+  })
+
+  it('should be able to register an array field that registers an array field', () => {
+    const form = useForm({
+      schema: twoDimensionalArraySchema,
+      onSubmit: (data) => {
+        return data
+      },
+    })
+
+    const array = form.registerArray('array', [])
+    const array2 = array.registerArray('0', [{ name: 'Wouter' }])
+
+    expect(array.modelValue.value).toEqual([
+      [
+        {
+          name: 'Wouter',
+        },
+      ],
+    ])
+    expect(array2.modelValue.value).toEqual([
+      {
+        name: 'Wouter',
+      },
+    ])
+
+    array.append([{ name: 'Robbe' }])
+
+    expect(array.modelValue.value).toEqual([
+      [
+        {
+          name: 'Wouter',
+        },
+      ],
+      [
+        {
+          name: 'Robbe',
+        },
+      ],
+
+    ])
   })
 })

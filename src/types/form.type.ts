@@ -96,13 +96,21 @@ export interface Field<TValue, TDefaultValue = undefined> {
   >
 
   registerArray: <
-    TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
-    TPath extends FieldPath<TValueAsFieldValues>,
-    TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
+    TPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
+    TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TPath> | undefined : never,
   >(
     path: TPath,
     defaultValue?: TChildDefaultValue,
-  ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
+  ) => FieldArray<FieldPathValue<TValue, TPath> extends Array<any> ? FieldPathValue<TValue, TPath>[number] : never>
+
+  // registerArray: <
+  //   TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
+  //   TPath extends FieldPath<TValueAsFieldValues>,
+  //   TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TPath> | undefined,
+  // >(
+  //   path: TPath,
+  //   defaultValue?: TChildDefaultValue,
+  // ) => FieldArray<FieldPathValue<TValueAsFieldValues, TPath>>
 }
 
 /**
@@ -200,8 +208,12 @@ export interface FieldArray<TValue> {
     defaultValue?: TChildDefaultValue
   ) => TValue[] extends FieldValues ? Field<FieldPathValue<TValue[], TChildPath>, any> : never
 
-  registerArray: <TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never>(
-    path: TPath
+  registerArray: <
+    TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
+    TChildDefaultValue extends TValue[] extends FieldValues ? FieldPathValue<TValue[], TPath> | undefined : never,
+  >(
+    path: TPath,
+    defaultValue?: TChildDefaultValue,
   ) => TValue extends FieldValues ? FieldArray<FieldPathValue<TValue, TPath extends FieldPath<TValue> ? TPath : never>> : never
 }
 

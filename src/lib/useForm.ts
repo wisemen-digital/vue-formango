@@ -348,13 +348,18 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
         return field
       },
-      registerArray: (childPath) => {
+      registerArray: (childPath, defaultValue) => {
         const currentPath = paths.value.get(id) as string
 
         const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
 
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return registerArray(fullPath) as FieldArray<any>
+        return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
     })
 
