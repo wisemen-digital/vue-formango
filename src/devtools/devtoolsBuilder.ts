@@ -1,6 +1,7 @@
+import type { UnwrapRef } from 'vue'
 import type { Field, Form } from '../types'
 
-export function buildFormState(form: Form<any>) {
+export function buildFormState(form: UnwrapRef<Form<any>>) {
   return {
     'Form state': [
       {
@@ -31,7 +32,7 @@ export function buildFormState(form: Form<any>) {
   }
 }
 
-export function buildFieldState(field: Field<any, any>) {
+export function buildFieldState(field: UnwrapRef<Field<any, any>>) {
   return {
     'Field state': [
       {

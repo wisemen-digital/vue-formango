@@ -1,29 +1,11 @@
-import type { ComputedRef, MaybeRefOrGetter, UnwrapRef } from 'vue'
-import { computed, reactive, ref, toValue, watch } from 'vue'
-import { z } from 'zod'
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
+import { computed, ref, shallowReactive, toValue, watch } from 'vue'
 import deepClone from 'clone-deep'
-import type { DeepPartial, Field, FieldArray, Form, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, Unregister } from '../types'
-import { generateId, get, set, unset } from '../utils'
+import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
+import { generateId, get, isSubPath, set, unset } from '../utils'
 import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
 
-interface UseFormReturnType<TSchema extends z.ZodType> {
-  /**
-   * Called when the form is valid and submitted.
-   * @param data The current form data.
-   */
-  onSubmitForm: (cb: (data: z.infer<TSchema>) => void) => void
-  /**
-   * Called when the form is attempted to be submitted, but is invalid.
-   * Only called for client-side validation.
-   */
-  onSubmitFormError: (cb: () => void) => void
-  /**
-   * The form instance itself.
-   */
-  form: Form<TSchema>
-}
-
-interface UseFormOptions<TSchema extends z.ZodType> {
+interface UseFormOptions<TSchema extends StandardSchemaV1> {
   /**
    * The zod schema of the form.
    */
@@ -31,67 +13,95 @@ interface UseFormOptions<TSchema extends z.ZodType> {
   /**
    * The initial state of the form
    */
-  initialState?: MaybeRefOrGetter<NestedNullableKeys<z.infer<TSchema>>>
+  initialState?: MaybeRefOrGetter<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>> | null>
+  /**
+   * Called when the form is valid and submitted.
+   * @param data The current form data.
+   */
+  onSubmit: (data: StandardSchemaV1.InferOutput<TSchema>) => void
+  /**
+   * Called when the form is attempted to be submitted, but is invalid.
+   * Only called for client-side validation.
+   */
+  onSubmitError?: ({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void
 }
 
-export function useForm<TSchema extends z.ZodType>(
+export function useForm<TSchema extends StandardSchemaV1>(
   {
     schema,
     initialState,
-  }: UseFormOptions<TSchema>): UseFormReturnType<TSchema> {
+    onSubmit,
+    onSubmitError,
+  }: UseFormOptions<TSchema>): Form<TSchema> {
   // Generate a unique id for the form
   // Used in devtools
   const formId = generateId()
-
   // The current state of the form
   // When a field is registered, it will be added to this object
   // The form will only be submitted if this state matches the schema
-  const form = reactive<DeepPartial<z.infer<TSchema>>>({} as DeepPartial<z.infer<TSchema>>)
+  const form = ref<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>({} as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>) as Ref<Record<string, unknown>>
 
   // The errors of the form
-  const errors = ref<z.ZodFormattedError<TSchema>>({} as z.ZodFormattedError<TSchema>)
+  const rawErrors = ref<readonly StandardSchemaV1.Issue[]>([])
+  const formattedErrors = computed<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>(() => {
+    return rawErrors.value.map((error) => {
+      if (error.path == null)
+        return error
 
-  let onSubmitCb: ((data: z.infer<TSchema>) => MaybePromise<void>) | null = null
-  let onSubmitFormErrorCb: (() => void) | undefined
+      const newPath = error.path
+        ?.map(item => (typeof item === 'object' ? item.key : item))
+        .join('.')
+
+      return {
+        message: error.message,
+        path: newPath,
+      }
+    }) as FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]
+  })
+
+  const onSubmitCb: ((data: StandardSchemaV1.InferOutput<TSchema>) => MaybePromise<void>) | null = onSubmit
+  const onSubmitFormErrorCb: (({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void) | undefined = onSubmitError
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
 
   // The initial state of the form
   // This is used to keep track of whether a field has been modified (isDirty)
-  const initialFormState = ref<DeepPartial<z.infer<TSchema>> | null>(initialState
-    ? deepClone(toValue(initialState)) as DeepPartial<z.infer<TSchema>>
-    : null)
+  const initialFormState = ref<DeepPartial<StandardSchemaV1.InferOutput<TSchema>> | null>(initialState
+    ? deepClone(toValue(initialState)) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
+    : null) as Ref<DeepPartial<StandardSchemaV1.InferInput<TSchema>> | null>
 
   // Tracks all the registered paths (id, path)
-  const paths = reactive(new Map<string, string>())
+  const paths = ref(new Map<string, string>())
 
   // Tracks all the paths by id with a computed value
   // Because of how Vue works, we need to track the computed value
   // Otherwise, when a component is unmounted, the computed value will be lost
-  const trackedDepencies = reactive(new Map<string, ComputedRef<unknown>>())
+  const trackedDependencies = new Map<string, ComputedRef<unknown>>()
 
   // Tracks all the registered fields
   // Used so that we don't need to re-register a field when it is already registered
-  const registeredFields = reactive(new Map<string, Field<any, any>>())
-  const registeredFieldArrays = reactive(new Map<string, FieldArray<any>>())
+  const registeredFields = shallowReactive(new Map<string, Field<any, any>>())
+  const registeredFieldArrays = shallowReactive(new Map<string, FieldArray<any>>())
 
   if (initialState != null)
-    Object.assign(form, deepClone(toValue(initialState)))
+    Object.assign(form.value, deepClone(toValue(initialState)))
 
   const isDirty = computed<boolean>(() => {
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => field.isDirty)
+    ].some(field => toValue(field.isDirty))
   })
 
-  const isValid = computed<boolean>(() => Object.keys(errors.value).length === 0)
+  const isValid = computed<boolean>(() => {
+    return rawErrors.value.length === 0
+  })
 
-  watch(() => initialState, (newInitialState) => {
+  watch(() => toValue(initialState), (newInitialState) => {
     if (!isDirty.value && newInitialState != null) {
-      initialFormState.value = deepClone(toValue(newInitialState)) as DeepPartial<z.infer<TSchema>>
-      Object.assign(form, deepClone(toValue(newInitialState)))
+      initialFormState.value = deepClone(toValue(newInitialState)) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
+      Object.assign(form.value, deepClone(toValue(newInitialState)))
     }
   }, {
     deep: true,
@@ -103,9 +113,9 @@ export function useForm<TSchema extends z.ZodType>(
   ): string | null => [...paths.entries()].find(([, p]) => p === path)?.[0] ?? null
 
   const getIsTrackedbyId = (
-    trackedDepencies: Map<string, ComputedRef<unknown>>,
+    trackedDependencies: Map<string, ComputedRef<unknown>>,
     pathId: string,
-  ): boolean => trackedDepencies.get(pathId)?.effect.active ?? false
+  ): boolean => trackedDependencies.get(pathId)?.effect.active ?? false
 
   // form.register('array.0')
   // form.register('array.1')
@@ -119,7 +129,7 @@ export function useForm<TSchema extends z.ZodType>(
       const parentPath = path.split('.').slice(0, -1).join('.')
 
       // Find all paths that start with the parent path
-      const matchingPaths = [...paths.entries()].filter(([, p]) => p.startsWith(parentPath))
+      const matchingPaths = [...paths.value.entries()].filter(([, p]) => p.startsWith(parentPath))
 
       for (const [id, p] of matchingPaths) {
         // Only update paths that have a number after the parent path
@@ -133,20 +143,20 @@ export function useForm<TSchema extends z.ZodType>(
           const newPath = `${parentPath}.${i - 1}`
           const suffixPath = p.slice(newPath.length)
 
-          paths.set(id, `${newPath}${suffixPath}`)
+          paths.value.set(id, `${newPath}${suffixPath}`)
         }
         else if (i === index) {
-          paths.delete(id)
+          paths.value.delete(id)
         }
       }
     }
     else {
-      const id = getIdByPath(paths, path) ?? null
+      const id = getIdByPath(paths.value, path) ?? null
 
       if (id === null)
         throw new Error('Path not found')
 
-      paths.delete(id)
+      paths.value.delete(id)
     }
   }
 
@@ -155,7 +165,7 @@ export function useForm<TSchema extends z.ZodType>(
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
     ].filter((field) => {
-      return field._path?.startsWith(path) && field._path !== path
+      return field._path.value?.startsWith(path) && field._path.value !== path
     })
   }
 
@@ -164,44 +174,48 @@ export function useForm<TSchema extends z.ZodType>(
     path: string,
     defaultOrExistingValue: unknown,
   ): Field<any, any> => {
-    const field = reactive<Field<any, any>>({
+    const field: Field<any, any> = {
       '_id': id,
-      '_path': path,
-      'isValid': false,
-      '_isTouched': false,
-      'isDirty': false,
-      'isTouched': false,
-      'isChanged': false,
-      'modelValue': defaultOrExistingValue,
-      'errors': undefined,
+      '_path': computed(() => path),
+      'isChanged': ref(false),
+      'isValid': computed(() => false),
+      'isDirty': computed(() => false),
+      'rawErrors': computed(() => []),
+      'isTouched': computed(() => false),
+      'modelValue': computed(() => defaultOrExistingValue),
+      'errors': computed(() => []),
       'onUpdate:modelValue': (newValue) => {
-        set(form, field._path as string, newValue)
+        if (field._path.value === null)
+          return
+        set(form.value, field._path.value, newValue)
       },
       'onBlur': () => {
-        field._isTouched = true
+        field._isTouched.value = true
       },
       'onChange': () => {
-        field.isChanged = true
+        field.isChanged.value = true
       },
+      '_isTouched': ref(false),
+      'value': computed(() => defaultOrExistingValue),
       'setValue': (newValue) => {
         field['onUpdate:modelValue'](newValue)
       },
       'register': (childPath, defaultValue) => {
-        const currentPath = paths.get(id) as string
+        const currentPath = paths.value.get(id)
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
       'registerArray': (childPath, defaultValue) => {
-        const currentPath = paths.get(id) as string
+        const currentPath = paths.value.get(id) as string
 
-        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
+        const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
-    })
+    }
 
     return field
   }
@@ -211,40 +225,40 @@ export function useForm<TSchema extends z.ZodType>(
     path: string,
     defaultOrExistingValue: unknown[],
   ): FieldArray<any> => {
-    const fields = reactive<string[]>([])
+    const fields = ref<string[]>([])
 
     for (let i = 0; i < defaultOrExistingValue.length; i++) {
       const fieldId = generateId()
-      fields.push(fieldId)
+      fields.value.push(fieldId)
     }
 
-    const insert = (index: number, value: unknown) => {
-      const path = paths.get(id) as string
+    const insert = (index: number, value: unknown): Field<any, any> => {
+      const path = paths.value.get(id) as string
 
-      fields[index] = generateId()
+      fields.value[index] = generateId()
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      register(`${path}.${index}` as Path<TSchema>, value as any)
+      return register(`${path}.${index}` as Path<TSchema>, value as any)
     }
 
     const remove = (index: number): void => {
-      const currentPath = paths.get(id) as string
+      const currentPath = paths.value.get(id) as string
 
-      fields.splice(index, 1)
+      fields.value.splice(index, 1)
 
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      unregister(`${currentPath}.${index}` as Path<TSchema>)
+      unregister(`${currentPath}.${index}` as Path<StandardSchemaV1.InferOutput<TSchema>>)
     }
 
     const prepend = (value: unknown): void => {
       insert(0, value)
     }
 
-    const append = (value: unknown): void => {
-      insert(fields.length, value)
+    const append = (value: unknown): Field<any, any> => {
+      return insert(fields.value.length, value)
     }
 
     const pop = (): void => {
-      remove(fields.length - 1)
+      remove(fields.value.length - 1)
     }
 
     const shift = (): void => {
@@ -252,44 +266,44 @@ export function useForm<TSchema extends z.ZodType>(
     }
 
     const move = (from: number, to: number): void => {
-      [fields[from], fields[to]] = [fields[to], fields[from]]
+      [fields.value[from], fields.value[to]] = [fields.value[to], fields.value[from]]
 
-      const currentPath = paths.get(id) as string
+      const currentPath = paths.value.get(id) as string
 
-      const currentValue = get(form, currentPath)
+      const currentValue = get(form.value, currentPath)
       const value = currentValue[from]
 
       currentValue[from] = currentValue[to]
       currentValue[to] = value
 
-      set(form, currentPath, currentValue)
+      set(form.value, currentPath, currentValue)
 
       const fromPath = `${currentPath}.${from}`
       const toPath = `${currentPath}.${to}`
 
-      const fromId = getIdByPath(paths, fromPath)
-      const toId = getIdByPath(paths, toPath)
+      const fromId = getIdByPath(paths.value, fromPath)
+      const toId = getIdByPath(paths.value, toPath)
 
       if (fromId === null || toId === null)
         throw new Error('Path not found')
 
-      for (const [id, p] of paths.entries()) {
+      for (const [id, p] of paths.value.entries()) {
         if (p.startsWith(fromPath)) {
           const newPath = p.replace(fromPath, toPath)
-          paths.set(id, newPath)
+          paths.value.set(id, newPath)
         }
         else if (p.startsWith(toPath)) {
           const newPath = p.replace(toPath, fromPath)
-          paths.set(id, newPath)
+          paths.value.set(id, newPath)
         }
       }
 
-      paths.set(fromId, toPath)
-      paths.set(toId, fromPath)
+      paths.value.set(fromId, toPath)
+      paths.value.set(toId, fromPath)
     }
 
     const empty = (): void => {
-      for (let i = fields.length - 1; i >= 0; i--)
+      for (let i = fields.value.length - 1; i >= 0; i--)
         remove(i)
     }
 
@@ -300,14 +314,16 @@ export function useForm<TSchema extends z.ZodType>(
         append(arrayValue)
     }
 
-    const fieldArray = reactive<FieldArray<any>>({
+    const fieldArray: FieldArray<any> = ({
       _id: id,
-      _path: path,
-      isValid: false,
-      isDirty: false,
-      isTouched: false,
-      modelValue: defaultOrExistingValue,
-      errors: undefined,
+      _path: computed(() => path),
+      isValid: computed(() => false),
+      isDirty: computed(() => false),
+      isTouched: computed(() => false),
+      modelValue: computed(() => defaultOrExistingValue),
+      rawErrors: computed(() => []),
+      errors: computed(() => []),
+      value: computed(() => defaultOrExistingValue),
       append,
       fields,
       insert,
@@ -319,19 +335,31 @@ export function useForm<TSchema extends z.ZodType>(
       empty,
       setValue,
       register: (childPath, defaultValue) => {
-        const currentPath = paths.get(id) as string
+        const currentPath = paths.value.get(id) as string
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return register(fullPath, defaultValue) as Field<any, any>
+        const field = register(fullPath, defaultValue) as Field<any, any>
+
+        return field
       },
-      registerArray: (childPath) => {
-        const currentPath = paths.get(id) as string
+      registerArray: (childPath, defaultValue) => {
+        const currentPath = paths.value.get(id) as string
 
-        const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
+        const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
+
+        for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
+          if (fields.value[i] === undefined)
+            fields.value[i] = generateId()
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return registerArray(fullPath) as FieldArray<any>
+        return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
     })
 
@@ -342,37 +370,38 @@ export function useForm<TSchema extends z.ZodType>(
     return (field as Field<any, any>)._isTouched !== undefined
   }
 
-  const getFieldWithTrackedDepencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
+  const getFieldWithTrackedDependencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
     field: TFieldArray,
     initialValue: unknown,
   ): TFieldArray => {
     const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
 
     field._path = computed<string | null>(() => {
-      const path = paths.get(field._id) ?? null
+      const path = paths.value.get(field._id) ?? null
 
       return path
-    }) as unknown as string | null
-
-    field.modelValue = computed<unknown>(() => {
-      if (field._path === null)
-        return null
-
-      return get(form, field._path)
     })
 
+    field.modelValue = computed<unknown>(() => {
+      if (field._path.value === null)
+        return null
+
+      return get(form.value, field._path.value)
+    })
+
+    field.value = computed(() => toValue(field.modelValue.value))
     field.isValid = computed<boolean>(() => {
-      if (field._path === null)
+      if (field._path.value === null)
         return false
 
-      return get(errors.value, field._path) === undefined
-    }) as unknown as boolean
+      return field.rawErrors.value.length === 0
+    })
 
     field.isDirty = computed<boolean>(() => {
-      if (field._path === null)
+      if (field._path.value === null)
         return false
 
-      const initialValue = get(initialFormState.value, field._path) ?? parsedStringifiedInitialValue
+      const initialValue = get(initialFormState.value, field._path.value) ?? parsedStringifiedInitialValue
 
       // if (field.modelValue instanceof File) {
       //   const currentFile = field.modelValue
@@ -381,17 +410,17 @@ export function useForm<TSchema extends z.ZodType>(
       //   return currentFile.name !== initialFile?.name
       // }
 
-      if (field.modelValue === '' && initialValue === null)
+      if (field.modelValue.value === '' && initialValue === null)
         return false
 
-      return JSON.stringify(field.modelValue) !== JSON.stringify(initialValue)
-    }) as unknown as boolean
+      return JSON.stringify(field.modelValue.value) !== JSON.stringify(initialValue)
+    })
 
     field.isTouched = computed<boolean>(() => {
-      if (field._path === null)
+      if (field._path.value === null)
         return false
 
-      const children = getChildPaths(field._path)
+      const children = getChildPaths(field._path.value)
 
       const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
 
@@ -399,17 +428,126 @@ export function useForm<TSchema extends z.ZodType>(
         return true
 
       if (isField(field))
-        return field._isTouched
+        return field._isTouched.value
 
       return false
-    }) as unknown as boolean
+    })
 
-    field.errors = computed<z.ZodFormattedError<TSchema>>(() => {
-      if (field._path === null)
-        return {}
+    field.rawErrors = computed<StandardSchemaV1.Issue[]>(() => {
+      if (field._path.value === null)
+        return []
 
-      return get(errors.value, field._path)
-    }) as unknown as z.ZodFormattedError<TSchema>
+      // Return all errors that have the field path as a prefix
+      const filteredRawErrors = rawErrors.value.filter((error) => {
+        const dottedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+          .join('.')
+
+        if (dottedPath == null || field._path.value == null)
+          return false
+
+        const { isPart } = isSubPath({
+          childPath: dottedPath,
+          parentPath: field._path.value,
+        })
+
+        if (dottedPath === field._path.value)
+          return true
+
+        return isPart
+      }).map((error) => {
+        const normalizedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+
+        if (normalizedPath == null || field._path.value == null)
+          return error
+
+        const joinedNormalizedPath = normalizedPath.join('.')
+        const { isPart, relativePath } = isSubPath({
+          childPath: joinedNormalizedPath,
+          parentPath: field._path.value,
+        })
+
+        if (!isPart) {
+          return {
+            ...error,
+            path: [],
+          }
+        }
+
+        // Remove the field path from the error path
+
+        return {
+          ...error,
+          path: relativePath?.split('.') ?? [],
+        }
+      })
+
+      return filteredRawErrors
+    })
+
+    field.errors = computed<FormattedError<any>[]>(() => {
+      if (field._path.value === null)
+        return []
+
+      const formattedErrors = rawErrors.value.filter((error) => {
+        const dottedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+          .join('.')
+
+        if (dottedPath == null || field._path.value == null)
+          return false
+
+        const { isPart } = isSubPath({
+          childPath: dottedPath,
+          parentPath: field._path.value,
+        })
+
+        if (dottedPath === field._path.value)
+          return true
+
+        return isPart
+      }).map((error: StandardSchemaV1.Issue) => {
+        const normalizedPath = error.path
+          ?.map(item => (typeof item === 'object' ? item.key : item))
+
+        if (normalizedPath == null || field._path.value == null) {
+          return {
+            message: error.message,
+            path: null,
+          }
+        }
+
+        const joinedNormalizedPath = normalizedPath.join('.')
+
+        if (joinedNormalizedPath === field._path.value) {
+          return {
+            message: error.message,
+            path: null,
+
+          }
+        }
+
+        const { isPart, relativePath } = isSubPath({
+          childPath: joinedNormalizedPath,
+          parentPath: field._path.value,
+        })
+
+        if (!isPart) {
+          return {
+            message: error.message,
+            path: null,
+          }
+        }
+
+        return {
+          message: error.message,
+          path: relativePath,
+        }
+      })
+
+      return formattedErrors as FormattedError<any>[]
+    })
 
     return field
   }
@@ -430,7 +568,7 @@ export function useForm<TSchema extends z.ZodType>(
   }
 
   const register: Register<TSchema> = (path, defaultValue) => {
-    const existingId = getIdByPath(paths, path)
+    const existingId = getIdByPath(paths.value, path)
 
     const clonedDefaultValue = deepClone(defaultValue)
 
@@ -439,39 +577,39 @@ export function useForm<TSchema extends z.ZodType>(
       let field = registeredFields.get(existingId) ?? null
 
       if (field === null) {
-        const value = get(form, path)
+        const value = get(form.value, path)
         field = createField(existingId, path, value)
       }
 
       // Check if value of the field is null or empty array, if so, set default value
-      const isEmpty = field.modelValue === null || (Array.isArray(field.modelValue) && field.modelValue.length === 0)
+      const isEmpty = field.modelValue.value === null || (Array.isArray(field.modelValue.value) && field.modelValue.value.length === 0)
 
       if (isEmpty && defaultValue !== undefined)
         field.setValue(clonedDefaultValue)
 
       // If it is, check if it is still being tracked
-      const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
+      const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
       // If it is, return the field
       if (existingTrackedDependency)
         return field
 
       // If it isn't being tracked anymore, retrack it
-      return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
+      return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
     }
 
     // If it isn't registered, register it
 
     // Even if the field is not registered, it might already have a value
-    const value = get(form, path)
+    const value = get(form.value, path)
 
     // If the value is undefined, set it to the default value
     if (value == null)
-      set(form, path, clonedDefaultValue ?? null)
+      set(form.value, path, clonedDefaultValue ?? null)
 
     const id = generateId()
 
     // Track the path
-    paths.set(id, path)
+    paths.value.set(id, path)
 
     const field = createField(id, path, value)
 
@@ -485,11 +623,11 @@ export function useForm<TSchema extends z.ZodType>(
     registerFieldWithDevTools(formId, field)
 
     // Track the field
-    return getFieldWithTrackedDepencies(field, clonedDefaultValue ?? null)
+    return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
   }
 
   const registerArray: RegisterArray<TSchema> = (path, defaultValue) => {
-    const existingId = getIdByPath(paths, path)
+    const existingId = getIdByPath(paths.value, path)
     const clonedDefaultValue = deepClone(defaultValue)
 
     // Check if the field is already registered
@@ -498,33 +636,32 @@ export function useForm<TSchema extends z.ZodType>(
       let fieldArray = registeredFieldArrays.get(existingId) ?? null
 
       if (fieldArray === null) {
-        const value = get(form, path)
+        const value = get(form.value, path)
         fieldArray = createFieldArray(existingId, path, value ?? [])
       }
 
       // Check if it is still being tracked
-      const existingTrackedDependency = getIsTrackedbyId(trackedDepencies, existingId)
+      const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
 
       // If it is, return the field
       if (existingTrackedDependency)
         return fieldArray
 
       // If it isn't being tracked anymore, retrack it
-      return getFieldWithTrackedDepencies(fieldArray, [])
+      return getFieldWithTrackedDependencies(fieldArray, [])
     }
 
     // If it isn't registered, register it
     // Even if the field is not registered, it might already have a value
-    const value = get(form, path)
-
+    const value = get(form.value, path)
     // If the value is undefined, set it to the default value
     if (value == null)
-      set(form, path, [])
+      set(form.value, path, [])
 
     const id = generateId()
 
     // Track the path
-    paths.set(id, path)
+    paths.value.set(id, path)
 
     const fieldArray = createFieldArray(id, path, value ?? [])
 
@@ -549,13 +686,13 @@ export function useForm<TSchema extends z.ZodType>(
     registerParentPaths(path)
 
     // Track the field
-    return getFieldWithTrackedDepencies(fieldArray, [])
+    return getFieldWithTrackedDependencies(fieldArray, [])
   }
 
   const unregister: Unregister<TSchema> = (path) => {
-    const id = getIdByPath(paths, path)
+    const id = getIdByPath(paths.value, path)
 
-    unset(form, path)
+    unset(form.value, path)
 
     if (id === null)
       return
@@ -563,8 +700,8 @@ export function useForm<TSchema extends z.ZodType>(
     updatePaths(path)
 
     registeredFields.delete(id)
-    trackedDepencies.delete(id)
-    paths.delete(id)
+    trackedDependencies.delete(id)
+    paths.value.delete(id)
     unregisterFieldWithDevTools(id)
   }
 
@@ -579,7 +716,10 @@ export function useForm<TSchema extends z.ZodType>(
     blurAll()
 
     if (!isValid.value) {
-      onSubmitFormErrorCb?.()
+      onSubmitFormErrorCb?.({
+        data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
+        errors: formattedErrors.value,
+      })
       return
     }
 
@@ -591,85 +731,97 @@ export function useForm<TSchema extends z.ZodType>(
     if (onSubmitCb == null)
       throw new Error('Attempted to submit form but `onSubmitForm` callback is not registered')
 
-    await onSubmitCb(schema.parse(form))
+    const validatedResult = await schema['~standard'].validate(form.value)
+    if (validatedResult.issues) {
+      onSubmitFormErrorCb?.({
+        data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
+        errors: formattedErrors.value,
+      })
+      return
+    }
 
-    initialFormState.value = deepClone(currentFormState)
+    await onSubmitCb(validatedResult.value)
+
+    initialFormState.value = deepClone(currentFormState.value) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
 
     isSubmitting.value = false
   }
 
-  const setValues = (values: DeepPartial<z.infer<TSchema>>): void => {
+  const setValues = (values: DeepPartial<StandardSchemaV1.InferOutput<TSchema>>): void => {
     for (const path in values)
-      set(form, path, values[path])
+      set(form.value, path, values[path])
   }
 
-  const addErrors = (err: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>): void => {
-    const mergeErrors = (
-      existingErrors: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
-      err: DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
-    ): void => {
-      for (const key in err) {
-        if (key === '_errors') {
-          existingErrors[key] = err[key]
-          continue
+  const addErrors = (err: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]): void => {
+    const standardErrors = err.map((error) => {
+      if (error.path == null) {
+        return {
+          ...error,
+          path: [],
         }
-
-        if (existingErrors[key] == null) {
-          existingErrors[key] = {
-            _errors: [],
-          } as any
-        }
-
-        mergeErrors(existingErrors[key] as any, err[key] as any)
       }
-    }
 
-    mergeErrors(
-      errors.value as DeepPartial<z.ZodFormattedError<z.infer<TSchema>>>,
-      err,
-    )
+      const newPath = error.path.split('.')
+
+      return {
+        ...error,
+        path: newPath,
+      }
+    })
+
+    rawErrors.value = [
+      ...rawErrors.value,
+      ...standardErrors,
+    ]
   }
 
-  watch(form, async () => {
-    try {
-      await schema.parseAsync(form)
+  watch(() => form.value, async () => {
+    const result = await schema['~standard'].validate(form.value)
 
-      errors.value = {} as UnwrapRef<z.ZodFormattedError<z.infer<TSchema>>>
+    const hasErrors = result.issues != null && result.issues.length > 0
+    if (hasErrors) {
+      rawErrors.value = result.issues
+      return
     }
-    catch (e) {
-      if (e instanceof z.ZodError)
-        errors.value = e.format() as UnwrapRef<z.ZodFormattedError<z.infer<TSchema>>>
-    }
+
+    rawErrors.value = []
   }, {
     deep: true,
     immediate: true,
   })
 
-  const formObject = reactive<any>({
+  const reset = () => {
+    if (initialState == null)
+      throw new Error('In order to reset the form, you need to provide an initial state')
+
+    Object.assign(form.value, deepClone(toValue(initialState)))
+    registeredFields.forEach((field) => {
+      field._isTouched.value = false
+    })
+
+    hasAttemptedToSubmit.value = false
+  }
+
+  const formObject: Form<TSchema> = {
     _id: formId,
-    state: form as DeepPartial<z.infer<TSchema>>,
-    errors: errors as unknown as z.ZodFormattedError<z.infer<TSchema>>,
-    isDirty: isDirty as unknown as boolean,
-    isValid: isValid as unknown as boolean,
-    isSubmitting: isSubmitting as unknown as boolean,
-    hasAttemptedToSubmit: hasAttemptedToSubmit as unknown as boolean,
+    state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
+    errors: computed(() => formattedErrors.value),
+    rawErrors: computed(() => rawErrors.value) as ComputedRef<StandardSchemaV1.Issue[]>,
+    isDirty: computed(() => isDirty.value),
+    isValid,
+    isSubmitting: computed(() => isSubmitting.value),
+    hasAttemptedToSubmit: computed(() => hasAttemptedToSubmit.value),
     register,
     registerArray,
     unregister,
     submit,
     setValues,
     addErrors,
-  })
+    reset,
+    blurAll,
+  }
 
   registerFormWithDevTools(formObject)
 
-  return {
-    form: formObject,
-    onSubmitForm: (cb: (data: z.infer<TSchema>) => MaybePromise<void>) => {
-      onSubmitCb = cb
-    },
-    onSubmitFormError: (cb: () => void) => {
-      onSubmitFormErrorCb = cb
-    },
-  }
+  return formObject
 }

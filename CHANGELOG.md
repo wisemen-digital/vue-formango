@@ -1,5 +1,21 @@
 # Formango
 
+## 3.0.0
+
+### Major changes
+
+- Form is now the root object that is returned by useForm, instead { form, ... }
+- Added onSubmitError callback to useForm, which passes the data and errors to the callback function
+- Added onSubmit callback to useForm, which passes the data to the callback function
+- Added rawErrors to useForm, which is an array of objects with a message and path, which are the raw errors from StandardSchemaV1
+- Added formatErrorsToZodFormattedError to format the errors to ZodFormattedError, which can handle both FormattedError and StandardSchemaV1 Issues
+- Added reset function to useForm, which resets the form to the initial state
+- Removed the onSubmitFormError callback from useForm, as it is now handled by onSubmitError
+- Removed the onSubmitForm callback from useForm, as it is now handled by onSubmit
+- Refactored internal code to use StandardSchemaV1 instead of Zod
+- Refactored internal code to use Ref and ComputedRef instead of Reactive
+- Refactored errors to custom formatting, that is an array of objects with a message and path
+
 ## 2.0.34
 
 ### Minor changes

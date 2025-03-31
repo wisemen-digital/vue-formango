@@ -6,6 +6,7 @@ import type {
 import {
   setupDevtoolsPlugin,
 } from '@vue/devtools-api'
+import type { UnwrapRef } from 'vue'
 import { getCurrentInstance, nextTick, onUnmounted, ref, watch } from 'vue'
 import type { Field, Form } from '../types'
 import type { EncodedNode, FieldNode, FormNode, ObjectWithPossiblyFieldRecursive } from '../types/devtools.type'
@@ -31,7 +32,7 @@ const COLORS = {
 
 let IS_INSTALLED = false
 
-function mapFieldsToObject(fields: Field<any, any>[]): ObjectWithPossiblyFieldRecursive {
+function mapFieldsToObject(fields: UnwrapRef<Field<any, any>[]>): ObjectWithPossiblyFieldRecursive {
   const obj = {}
   fields.forEach((field) => {
     if (!field._path)
@@ -98,22 +99,26 @@ const calculateNodes = (): CustomInspectorNode[] => {
   nonFieldsCounter = 0
   return Object.keys(DEVTOOLS_FORMS.value).map((formId: string) => {
     const form = DEVTOOLS_FORMS.value[formId]
+    const actualForm = form.form as unknown as UnwrapRef<Form<any>>
 
-    const allFormFields = Object.keys(DEVTOOLS_FIELDS.value).filter((key) => {
+    const foundFieldKeys = Object.keys(DEVTOOLS_FIELDS.value).filter((key) => {
       const field = DEVTOOLS_FIELDS.value[key]
       return form.form._id === field.formId
-    }).map((key) => {
+    })
+
+    const allFormFields = foundFieldKeys.map((key) => {
       const field = DEVTOOLS_FIELDS.value[key]
       field.field.__ID__ = key
       return field.field
-    })
+    }) as unknown as UnwrapRef<Field<any, any>>[]
 
     const mappedAsObject = mapFieldsToObject(allFormFields)
     const formChildren = mapObjectToCustomInspectorNode(mappedAsObject)
+
     const validTag = {
-      label: form.form.isValid ? 'Valid' : 'Invalid',
+      label: actualForm.isValid ? 'Valid' : 'Invalid',
       textColor: COLORS.white,
-      backgroundColor: form.form.isValid ? COLORS.success : COLORS.error,
+      backgroundColor: actualForm.isValid ? COLORS.success : COLORS.error,
     }
     return {
       id: formId,
@@ -122,7 +127,6 @@ const calculateNodes = (): CustomInspectorNode[] => {
         validTag,
       ],
       children: formChildren,
-
     }
   })
 }
@@ -169,8 +173,14 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
     if (payload.inspectorId !== INSPECTOR_ID)
       return
 
-    const calculatedNodes = calculateNodes()
-    payload.rootNodes = calculatedNodes
+    try {
+      const calculatedNodes = calculateNodes()
+      payload.rootNodes = calculatedNodes
+    }
+    catch (e) {
+      console.error('Error with calculating devtools nodes')
+      console.error(e)
+    }
   })
 
   api.on.getInspectorState((payload) => {
@@ -179,9 +189,9 @@ function setupApiHooks(api: DevtoolsPluginApi<Record<string, any>>) {
 
     const decodedNode = decodeNodeId(payload.nodeId)
     if (decodedNode?.type === 'form' && decodedNode?.form)
-      payload.state = buildFormState(decodedNode.form)
+      payload.state = buildFormState(decodedNode.form as unknown as UnwrapRef<Form<any>>)
     else if (decodedNode?.type === 'field' && decodedNode?.field?.field)
-      payload.state = buildFieldState(decodedNode?.field.field)
+      payload.state = buildFieldState(decodedNode?.field.field as unknown as UnwrapRef<Field<any, any>>)
   })
 }
 

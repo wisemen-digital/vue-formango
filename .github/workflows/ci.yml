@@ -18,12 +18,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
 
       - name: Set node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 22.x
           cache: pnpm
 
       - name: Setup
@@ -43,12 +43,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
 
       - name: Set node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 22.x
           cache: pnpm
 
       - name: Setup
@@ -65,7 +65,7 @@ jobs:
 
     strategy:
       matrix:
-        node: [16.x]
+        node: [22.x]
         os: [ubuntu-latest, windows-latest, macos-latest]
       fail-fast: false
 
@@ -75,7 +75,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
 
       - name: Set node ${{ matrix.node }}
         uses: actions/setup-node@v3

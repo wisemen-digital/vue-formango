@@ -73,7 +73,7 @@ export type Path<T> = T extends any ? PathInternal<T> : never
 /**
  * See {@link Path}
  */
-export type FieldPath<TFieldValues extends FieldValues> = Path<TFieldValues>
+export type FieldPath<TFieldValues> = Path<TFieldValues>
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -172,7 +172,7 @@ export type PathValue<T, P extends Path<T> | ArrayPath<T>> = T extends any
  * See {@link PathValue}
  */
 export type FieldPathValue<
-  TFieldValues extends FieldValues,
+  TFieldValues,
   TFieldPath extends FieldPath<TFieldValues>,
 > = PathValue<TFieldValues, TFieldPath>
 

@@ -14,41 +14,43 @@ import { useForm } from 'formango'
 
 import { loginFormSchema } from './loginForm.model'
 
-const { form, onSubmitForm } = useForm({
+const form = useForm({
   schema: loginFormSchema,
-})
-
-const email = form.register('email')
-const password = form.register('password')
-
-onSubmitForm(async (user) => {
+  onSubmit: async (data) => {
   // Handle user create
-  const response = await fetch('loginUrl', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(user),
-  })
-  const data = await response.json()
+    const response = await fetch('loginUrl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(user),
+    })
+    const data = await response.json()
 
-  if (!response.ok) {
+    if (!response.ok) {
     /* Response is not ok, set form errors, response example:
      {
         'password': 'Credentials are invalid',
      }
 
     **/
-    const passwordError = (await data.json()).password
-    // Sets the errors to the password field, so the user can see them
-    form.addErrors({
-      password: passwordError,
-    })
-    return
-  }
+      const passwordError = (await data.json()).password
+      // Sets the errors to the password field, so the user can see them
+      form.addErrors([{
+        path: 'password',
+        message: 'Your password or email address is wrong'
+      }])
 
-  console.log(data)
+      return
+    }
+
+    console.log(data)
+
+  }
 })
+
+const email = form.register('email')
+const password = form.register('password')
 </script>
 
 <template>
