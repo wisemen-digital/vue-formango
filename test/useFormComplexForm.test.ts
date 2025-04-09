@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest"
-import { useForm } from "../src"
-import { QuestionType, TemplateFormOpenQuestion, templateUpdateFormSchema } from "./wiserTemplateSchema"
-
+import { describe, expect, it } from 'vitest'
+import { useForm } from '../src'
+import type { TemplateFormOpenQuestion } from './wiserTemplateSchema'
+import { QuestionType, templateUpdateFormSchema } from './wiserTemplateSchema'
 
 const EMPTY_QUESTION = {
   uuid: null,
@@ -20,7 +20,6 @@ describe('when using a complex schema', () => {
         return data
       },
 
-      
     })
     const steps = form.registerArray('steps')
     const questions = steps.registerArray('0.questions')

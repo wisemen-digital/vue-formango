@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-
 export enum TemplateType {
   PEER_REVIEW = 'peer_review',
-  INDIVIDUAL = 'individual'
+  INDIVIDUAL = 'individual',
 }
 
 export const templateFormTypeEnum = z.nativeEnum(TemplateType)
@@ -18,9 +17,6 @@ const baseTemplateFormQuestionSchema = z.object({
   description: z.string().nullable(),
 })
 
-
-
-
 export const templateChoiceSchema = z.object({
   uuid: choiceUuidSchema.nullable(),
   sortIndex: z.number(),
@@ -31,9 +27,8 @@ export enum QuestionType {
   OPEN = 'open',
   SCORE = 'score',
   MULTIPLE_CHOICE = 'multiple_choice',
-  SINGLE_CHOICE = 'single_choice'
+  SINGLE_CHOICE = 'single_choice',
 }
-
 
 const templateFormOpenQuestionSchema = baseTemplateFormQuestionSchema.merge(z.object({
   questionType: z.literal(QuestionType.OPEN),
@@ -77,7 +72,6 @@ export const templateUpdateFormSchema = z.object({
   steps: templateStepFormSchema.array(),
   type: templateFormTypeEnum,
 })
-
 
 export type TemplateUpdateForm = z.infer<typeof templateUpdateFormSchema>
 export type TemplateChoice = z.infer<typeof templateChoiceSchema>
