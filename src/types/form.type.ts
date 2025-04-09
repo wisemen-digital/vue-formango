@@ -212,7 +212,7 @@ export interface FieldArray<TValue> {
     TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
     TArrayValue extends FieldPathValue<TValue[], TPath>,
     TChildDefaultValue extends TValue[] extends FieldValues ? FieldPathValue<TValue[], TPath> | undefined : never,
-    TSingleValue extends TArrayValue extends Array<FieldValues> ? TArrayValue[number] : never,
+    TSingleValue extends TArrayValue extends Array<any> ? TArrayValue[number] : never,
   >(
     path: TPath,
     defaultValue?: TChildDefaultValue,
