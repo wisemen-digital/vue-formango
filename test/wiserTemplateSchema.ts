@@ -68,7 +68,7 @@ export const templateFormQuestionSchema = z.discriminatedUnion('questionType', [
 export const templateStepFormSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullable(),
-  questions: z.array(templateFormOpenQuestionSchema),
+  questions: z.array(templateFormQuestionSchema),
 })
 
 export const templateUpdateFormSchema = z.object({
