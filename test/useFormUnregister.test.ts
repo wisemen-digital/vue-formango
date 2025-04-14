@@ -1,7 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import { z } from 'zod'
+
 import { useForm } from '../src/lib/useForm'
-import { basicArraySchema, basicSchema } from './testUtils'
+import {
+  basicArraySchema,
+  basicSchema,
+} from './testUtils'
 
 describe('unregister a field or fieldArray', () => {
   it('should unregister a field', () => {
@@ -27,6 +35,7 @@ describe('unregister a field or fieldArray', () => {
     })
 
     const array = form.registerArray('array')
+
     array.append('John')
     array.register('0')
 
@@ -37,7 +46,9 @@ describe('unregister a field or fieldArray', () => {
     array.register('0')
 
     expect(form.state.value).toEqual({
-      array: ['Doe'],
+      array: [
+        'Doe',
+      ],
     })
   })
 
@@ -50,18 +61,19 @@ describe('unregister a field or fieldArray', () => {
     })
 
     const array = form.registerArray('array')
+
     array.append('John')
 
     array.remove(0)
 
-    expect(form.state.value).toEqual({
-      array: [],
-    })
+    expect(form.state.value).toEqual({ array: [] })
 
     array.append('Doe')
 
     expect(form.state.value).toEqual({
-      array: ['Doe'],
+      array: [
+        'Doe',
+      ],
     })
 
     form.unregister('array.0')
@@ -69,13 +81,7 @@ describe('unregister a field or fieldArray', () => {
 
   it('should unregister an array index with a subfield', () => {
     const form = useForm({
-      schema: z.object({
-        questions: z.object({
-          choices: z.object({
-            text: z.string(),
-          }).array(),
-        }).array(),
-      }),
+      schema: z.object({ questions: z.object({ choices: z.object({ text: z.string() }).array() }).array() }),
       onSubmit: (data) => {
         return data
       },
@@ -88,6 +94,7 @@ describe('unregister a field or fieldArray', () => {
     const question0 = form.register('questions.0')
 
     const choices = question0.registerArray('choices')
+
     choices.append()
 
     const choice = form.register('questions.0.choices.0')
@@ -109,5 +116,7 @@ describe('unregister a field or fieldArray', () => {
     // expect(form.state.value).toEqual({
     //   choices: [],
     // })
+
+    expect(choices.modelValue.value).toEqual([])
   })
 })

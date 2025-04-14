@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
-import { basicSchema, objectSchema, sleep, twoDimensionalArraySchema } from './testUtils'
+import {
+  basicSchema,
+  objectSchema,
+  sleep,
+  twoDimensionalArraySchema,
+} from './testUtils'
 
 describe('isValid', () => {
   it('should be false by default when form is not valid', async () => {
@@ -13,7 +23,7 @@ describe('isValid', () => {
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
   })
 
   it('should be true if all fields are valid', async () => {
@@ -26,13 +36,13 @@ describe('isValid', () => {
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
 
     form.register('name', 'John')
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(true)
+    expect(form.isValid.value).toBeTruthy()
   })
 
   it('an field with object isValid value should be based on its children being valid', async () => {
@@ -49,32 +59,32 @@ describe('isValid', () => {
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
-    expect(a.isValid.value).toEqual(false)
-    expect(ab.isValid.value).toEqual(false)
-    expect(abObj.isValid.value).toEqual(false)
-    expect(abObjC.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
+    expect(a.isValid.value).toBeFalsy()
+    expect(ab.isValid.value).toBeFalsy()
+    expect(abObj.isValid.value).toBeFalsy()
+    expect(abObjC.isValid.value).toBeFalsy()
 
     abObjC.setValue('John')
     abObj.setValue({ c: 'John' })
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
-    expect(a.isValid.value).toEqual(false)
-    expect(ab.isValid.value).toEqual(false)
-    expect(abObj.isValid.value).toEqual(true)
-    expect(abObjC.isValid.value).toEqual(true)
+    expect(form.isValid.value).toBeFalsy()
+    expect(a.isValid.value).toBeFalsy()
+    expect(ab.isValid.value).toBeFalsy()
+    expect(abObj.isValid.value).toBeTruthy()
+    expect(abObjC.isValid.value).toBeTruthy()
 
     ab.setValue('John')
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(true)
-    expect(a.isValid.value).toEqual(true)
-    expect(ab.isValid.value).toEqual(true)
-    expect(abObj.isValid.value).toEqual(true)
-    expect(abObjC.isValid.value).toEqual(true)
+    expect(form.isValid.value).toBeTruthy()
+    expect(a.isValid.value).toBeTruthy()
+    expect(ab.isValid.value).toBeTruthy()
+    expect(abObj.isValid.value).toBeTruthy()
+    expect(abObjC.isValid.value).toBeTruthy()
   })
 
   it('should be false if an element of a fieldArray is invalid', async () => {
@@ -95,52 +105,54 @@ describe('isValid', () => {
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
-    expect(array.isValid.value).toEqual(false)
-    expect(array0.isValid.value).toEqual(false)
-    expect(array00.isValid.value).toEqual(false)
-    expect(array00Name.isValid.value).toEqual(false)
-    expect(array01.isValid.value).toEqual(false)
-    expect(array01Name.isValid.value).toEqual(false)
-    expect(array1.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
+    expect(array.isValid.value).toBeFalsy()
+    expect(array0.isValid.value).toBeFalsy()
+    expect(array00.isValid.value).toBeFalsy()
+    expect(array00Name.isValid.value).toBeFalsy()
+    expect(array01.isValid.value).toBeFalsy()
+    expect(array01Name.isValid.value).toBeFalsy()
+    expect(array1.isValid.value).toBeFalsy()
 
     array00Name.setValue('John')
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
-    expect(array.isValid.value).toEqual(false)
-    expect(array0.isValid.value).toEqual(false)
-    expect(array01.isValid.value).toEqual(false)
-    expect(array01Name.isValid.value).toEqual(false)
-    expect(array1.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
+    expect(array.isValid.value).toBeFalsy()
+    expect(array0.isValid.value).toBeFalsy()
+    expect(array01.isValid.value).toBeFalsy()
+    expect(array01Name.isValid.value).toBeFalsy()
+    expect(array1.isValid.value).toBeFalsy()
 
-    expect(array00.isValid.value).toEqual(true)
-    expect(array00Name.isValid.value).toEqual(true)
+    expect(array00.isValid.value).toBeTruthy()
+    expect(array00Name.isValid.value).toBeTruthy()
 
     array01.setValue({ name: 'John' })
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(false)
-    expect(array.isValid.value).toEqual(false)
-    expect(array1.isValid.value).toEqual(false)
+    expect(form.isValid.value).toBeFalsy()
+    expect(array.isValid.value).toBeFalsy()
+    expect(array1.isValid.value).toBeFalsy()
 
-    expect(array0.isValid.value).toEqual(true)
-    expect(array01.isValid.value).toEqual(true)
-    expect(array01Name.isValid.value).toEqual(true)
-    expect(array00.isValid.value).toEqual(true)
+    expect(array0.isValid.value).toBeTruthy()
+    expect(array01.isValid.value).toBeTruthy()
+    expect(array01Name.isValid.value).toBeTruthy()
+    expect(array00.isValid.value).toBeTruthy()
 
-    array1.setValue([{ name: 'John' }])
+    array1.setValue([
+      { name: 'John' },
+    ])
 
     await sleep(0)
 
-    expect(form.isValid.value).toEqual(true)
-    expect(array.isValid.value).toEqual(true)
-    expect(array0.isValid.value).toEqual(true)
-    expect(array1.isValid.value).toEqual(true)
-    expect(array00.isValid.value).toEqual(true)
-    expect(array01.isValid.value).toEqual(true)
-    expect(array01Name.isValid.value).toEqual(true)
+    expect(form.isValid.value).toBeTruthy()
+    expect(array.isValid.value).toBeTruthy()
+    expect(array0.isValid.value).toBeTruthy()
+    expect(array1.isValid.value).toBeTruthy()
+    expect(array00.isValid.value).toBeTruthy()
+    expect(array01.isValid.value).toBeTruthy()
+    expect(array01Name.isValid.value).toBeTruthy()
   })
 })

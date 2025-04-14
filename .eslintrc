@@ -1,8 +1,0 @@
-{
-  "extends": "@antfu",
-  "ignorePatterns": ["/docs/.vitepress/**/*", "/docs/**/*.svg", "/docs/**/*.css"],
-  "rules": {
-    "no-mixed-spaces-and-tabs": "off",
-    "no-tabs": "off"
-  }
-}

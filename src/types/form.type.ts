@@ -1,9 +1,17 @@
-import type { ComputedRef, Ref } from 'vue'
-import type { DeepPartial } from './utils.type'
-import type { FieldPath, FieldPathValue, FieldValues } from './eager.type'
-import type { StandardSchemaV1 } from './standardSpec.type'
+import type {
+  ComputedRef,
+  Ref,
+} from 'vue'
 
-export type MaybePromise<T> = T | Promise<T>
+import type {
+  FieldPath,
+  FieldPathValue,
+  FieldValues,
+} from './eager.type'
+import type { StandardSchemaV1 } from './standardSpec.type'
+import type { DeepPartial } from './utils.type'
+
+export type MaybePromise<T> = Promise<T> | T
 
 /**
  * Represents a form field.
@@ -13,77 +21,48 @@ export type MaybePromise<T> = T | Promise<T>
  */
 export interface Field<TValue, TDefaultValue = undefined> {
   /**
-   * The current path of the field. This can change if fields are unregistered.
-   */
-  _path: ComputedRef<string | null>
-  /**
    * The unique id of the field.
    */
-  _id: string
+  '_id': string
+  /**
+   * Indicates whether the field has been changed.
+   * This flag will remain `true` even if the field value is set back to its initial value.
+   */
+  'isChanged': Ref<boolean>
+  /**
+   * Indicates whether the field value is different from its initial value.
+   */
+  'isDirty': ComputedRef<boolean>
+  /**
+   * Indicates whether the field has been touched (blurred).
+   */
+  'isTouched': ComputedRef<boolean>
+  /**
+   * Indicates whether the field has any errors.
+   */
+  'isValid': ComputedRef<boolean>
+
   /**
    * Internal flag to track if the field has been touched (blurred).
    */
-  _isTouched: Ref<boolean>
+  '_isTouched': Ref<boolean>
+  /**
+   * The current path of the field. This can change if fields are unregistered.
+   */
+  '_path': ComputedRef<string | null>
+  /**
+   * The errors associated with the field and its children.
+   */
+  'errors': ComputedRef<FormattedError<TValue>[]>
   /**
    * The current value of the field.
    */
-  modelValue: ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
+  'modelValue': ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
   /**
-    * Updates the current value of the field.
-    *
-    * @param value The new value of the field.
-    */
-  'onUpdate:modelValue': (value: TValue | null) => void
-
-  /**
-   * The current value of the field.
-   *
-   * This is an alias of `attrs.modelValue`.
-  */
-  value: ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
-  /**
-  * The errors associated with the field and its children.
-  */
-  errors: ComputedRef<FormattedError<TValue>[]>
-  /**
-  * The raw errors associated with the field and its children.
-  */
-  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
-  /**
-    * Indicates whether the field has any errors.
-    */
-  isValid: ComputedRef<boolean>
-  /**
-    * Indicates whether the field has been touched (blurred).
-    */
-  isTouched: ComputedRef<boolean>
-  /**
-    * Indicates whether the field has been changed.
-    * This flag will remain `true` even if the field value is set back to its initial value.
-    */
-  isChanged: Ref<boolean>
-  /**
-    * Indicates whether the field value is different from its initial value.
-    */
-  isDirty: ComputedRef<boolean>
-  /**
-     * Called when the field input is blurred.
-     */
-  onBlur: () => void
-  /**
-     * Called when the field input value is changed.
-    */
-  onChange: () => void
-
-  /**
-   * Sets the current value of the field.
-   *
-   * This is an alias of `onUpdate:modelValue`.
-   *
-   * @param value The new value of the field.
+   * The raw errors associated with the field and its children.
    */
-  setValue: (value: TValue | null) => void
-  register: <
+  'rawErrors': ComputedRef<StandardSchemaV1.Issue[]>
+  'register': <
     TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
     TChildPath extends FieldPath<TValueAsFieldValues>,
     TChildDefaultValue extends FieldPathValue<TValueAsFieldValues, TChildPath> | undefined,
@@ -94,14 +73,43 @@ export interface Field<TValue, TDefaultValue = undefined> {
     FieldPathValue<TValueAsFieldValues, TChildPath>,
     TChildDefaultValue
   >
-
-  registerArray: <
+  'registerArray': <
     TPath extends TValue extends FieldValues ? FieldPath<TValue> : never,
     TChildDefaultValue extends TValue extends FieldValues ? FieldPathValue<TValue, TPath> | undefined : never,
   >(
     path: TPath,
     defaultValue?: TChildDefaultValue,
   ) => FieldArray<FieldPathValue<TValue, TPath> extends Array<any> ? FieldPathValue<TValue, TPath>[number] : never>
+  /**
+   * Sets the current value of the field.
+   *
+   * This is an alias of `onUpdate:modelValue`.
+   *
+   * @param value The new value of the field.
+   */
+  'setValue': (value: TValue | null) => void
+  /**
+   * The current value of the field.
+   *
+   * This is an alias of `attrs.modelValue`.
+   */
+  'value': ComputedRef<TDefaultValue extends undefined ? TValue | null : TValue>
+
+  /**
+   * Called when the field input is blurred.
+   */
+  'onBlur': () => void
+  /**
+   * Called when the field input value is changed.
+   */
+  'onChange': () => void
+
+  /**
+   * Updates the current value of the field.
+   *
+   * @param value The new value of the field.
+   */
+  'onUpdate:modelValue': (value: TValue | null) => void
 
   // registerArray: <
   //   TValueAsFieldValues extends TValue extends FieldValues ? TValue : never,
@@ -120,86 +128,66 @@ export interface Field<TValue, TDefaultValue = undefined> {
  */
 export interface FieldArray<TValue> {
   /**
-   * The current path of the field. This can change if fields are unregistered.
-   */
-  _path: ComputedRef<string | null>
-  /**
    * The unique id of the field.
    */
   _id: string
   /**
-   * Array of unique ids of the fields.
+   * Indicates whether the field value is different from its initial value.
    */
-  fields: Ref<string[]>
+  isDirty: ComputedRef<boolean>
+  /**
+   * Indicates whether the field has been touched (blurred).
+   */
+  isTouched: ComputedRef<boolean>
+  /**
+   * Indicates whether the field has any errors.
+   */
+  isValid: ComputedRef<boolean>
+  /**
+   * The current path of the field. This can change if fields are unregistered.
+   */
+  _path: ComputedRef<string | null>
+  /**
+   * Add a new field at the end of the array.
+   */
+  append: (value?: TValue) => void
+  /**
+   * Empty the array.
+   */
+  empty: () => void
   /**
    * The errors associated with the field and its children.
    */
   errors: ComputedRef<FormattedError<TValue[]>[]>
   /**
-  * The raw errors associated with the field and its children.
-  */
-  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
-  /**
-   * The current value of the field.
+   * Array of unique ids of the fields.
    */
-  modelValue: ComputedRef<TValue[]>
-  /**
-  * Indicates whether the field has any errors.
-  */
-  isValid: ComputedRef<boolean>
-  /**
-  * Indicates whether the field has been touched (blurred).
-  */
-  isTouched: ComputedRef<boolean>
-  /**
-  * Indicates whether the field value is different from its initial value.
-  */
-  isDirty: ComputedRef<boolean>
-  /**
-   * The current value of the field.
-   *
-   * This is an alias of `attrs.modelValue`.
-  */
-  value: ComputedRef<TValue[]>
+  fields: Ref<string[]>
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.
    */
   insert: (index: number, value?: TValue) => void
   /**
-   * Remove a field at the given index.
-   * @param index The index of the field to remove.
+   * The current value of the field.
    */
-  remove: (index: number) => void
-  /**
-   * Add a new field at the beginning of the array.
-   */
-  prepend: (value?: TValue) => void
-  /**
-   * Add a new field at the end of the array.
-   */
-  append: (value?: TValue) => void
-  /**
-   * Remove the last field of the array.
-   */
-  pop: () => void
-  /**
-   * Remove the first field of the array.
-   */
-  shift: () => void
+  modelValue: ComputedRef<TValue[]>
   /**
    * Move a field from one index to another.
    */
   move: (from: number, to: number) => void
   /**
-   * Empty the array.
+   * Remove the last field of the array.
    */
-  empty: () => void
+  pop: () => void
   /**
-   * Set the current value of the field.
+   * Add a new field at the beginning of the array.
    */
-  setValue: (value: TValue[]) => void
-
+  prepend: (value?: TValue) => void
+  /**
+   * The raw errors associated with the field and its children.
+   */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
   register: <
     TChildPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
     TChildDefaultValue extends TValue[] extends FieldValues ? FieldPathValue<TValue[], TChildPath> | undefined : never,
@@ -207,7 +195,6 @@ export interface FieldArray<TValue> {
     path: TChildPath,
     defaultValue?: TChildDefaultValue
   ) => TValue[] extends FieldValues ? Field<FieldPathValue<TValue[], TChildPath>, any> : never
-
   registerArray: <
     TPath extends TValue[] extends FieldValues ? FieldPath<TValue[]> : never,
     TArrayValue extends FieldPathValue<TValue[], TPath>,
@@ -217,6 +204,27 @@ export interface FieldArray<TValue> {
     path: TPath,
     defaultValue?: TChildDefaultValue,
   ) => FieldArray<TSingleValue>
+  /**
+   * Remove a field at the given index.
+   * @param index The index of the field to remove.
+   */
+  remove: (index: number) => void
+  /**
+   * Set the current value of the field.
+   */
+  setValue: (value: TValue[]) => void
+
+  /**
+   * Remove the first field of the array.
+   */
+  shift: () => void
+
+  /**
+   * The current value of the field.
+   *
+   * This is an alias of `attrs.modelValue`.
+   */
+  value: ComputedRef<TValue[]>
 }
 
 export type Register<TSchema> = <
@@ -242,18 +250,9 @@ export interface Form<TSchema extends StandardSchemaV1> {
    */
   _id: string
   /**
-   * The current state of the form.
+   * Indicates whether the form has been attempted to submit.
    */
-  state: ComputedRef<Readonly<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>>
-  /**
-   * The collection of all registered fields' errors.
-   */
-  errors: ComputedRef<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>
-  /**
-  * The raw errors associated with the field and its children.
-  */
-  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
-
+  hasAttemptedToSubmit: ComputedRef<boolean>
   /**
    * Indicates whether the form is dirty or not.
    *
@@ -264,16 +263,31 @@ export interface Form<TSchema extends StandardSchemaV1> {
    * Indicates whether the form is currently submitting or not.
    */
   isSubmitting: ComputedRef<boolean>
-  /**
-   * Indicates whether the form has been attempted to submit.
-   */
-  hasAttemptedToSubmit: ComputedRef<boolean>
+
   /**
    * Indicates whether the form is currently valid or not.
    *
    * A form is considered valid if all of its fields are valid.
    */
   isValid: ComputedRef<boolean>
+  /**
+   * Sets errors in the form.
+   *
+   * @param errors The new errors for the form fields.
+   */
+  addErrors: (errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]) => void
+  /**
+   * Blurs all inputs in the form.
+   */
+  blurAll: () => void
+  /**
+   * The collection of all registered fields' errors.
+   */
+  errors: ComputedRef<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>
+  /**
+   * The raw errors associated with the field and its children.
+   */
+  rawErrors: ComputedRef<StandardSchemaV1.Issue[]>
   /**
    * Registers a new form field.
    *
@@ -287,17 +301,9 @@ export interface Form<TSchema extends StandardSchemaV1> {
    */
   registerArray: RegisterArray<TSchema>
   /**
-   * Unregisters a previously registered field.
-   *
-   * @param path The path of the field to unregister.
+   * Resets the form to the initial state.
    */
-  unregister: Unregister<TSchema>
-  /**
-   * Sets errors in the form.
-   *
-   * @param errors The new errors for the form fields.
-   */
-  addErrors: (errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]) => void
+  reset: () => void
   /**
    * Sets values in the form.
    *
@@ -305,19 +311,21 @@ export interface Form<TSchema extends StandardSchemaV1> {
    */
   setValues: (values: DeepPartial<StandardSchemaV1.InferOutput<TSchema>>) => void
   /**
+   * The current state of the form.
+   */
+  state: ComputedRef<Readonly<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>>
+  /**
    * Submits the form.
    *
    * @returns A promise that resolves once the form has been successfully submitted.
    */
   submit: () => Promise<void>
   /**
-   * Resets the form to the initial state.
+   * Unregisters a previously registered field.
+   *
+   * @param path The path of the field to unregister.
    */
-  reset: () => void
-  /**
-   * Blurs all inputs in the form.
-   */
-  blurAll: () => void
+  unregister: Unregister<TSchema>
 }
 
 /**
@@ -327,20 +335,20 @@ export interface Form<TSchema extends StandardSchemaV1> {
  */
 export interface UseForm<T extends StandardSchemaV1> {
   /**
+   * The form instance itself.
+   */
+  form: Form<T>
+  /**
    * Called when the form is valid and submitted.
    * @param data The current form data.
    */
   onSubmitForm: (cb: (data: StandardSchemaV1.InferOutput<T>) => void) => void
-  /**
-   * The form instance itself.
-   */
-  form: Form<T>
 }
 
 export interface FormattedError<
- TType,
+  TType,
 > {
-  path: FieldPath<TType extends FieldValues ? TType : never>
-
   message: string
+
+  path: FieldPath<TType extends FieldValues ? TType : never>
 }

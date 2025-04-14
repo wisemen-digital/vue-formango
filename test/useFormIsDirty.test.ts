@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
 import { basicSchema } from './testUtils'
 
@@ -11,21 +16,19 @@ describe('isDirty', () => {
       },
     })
 
-    expect(form.isDirty.value).toEqual(false)
+    expect(form.isDirty.value).toBeFalsy()
   })
 
   it('should be false when a default state is provided', () => {
     const form = useForm({
+      initialState: { name: 'John' },
       schema: basicSchema,
-      initialState: {
-        name: 'John',
-      },
       onSubmit: (data) => {
         return data
       },
     })
 
-    expect(form.isDirty.value).toEqual(false)
+    expect(form.isDirty.value).toBeFalsy()
   })
 
   it('should be false when a field is registered with a default value', () => {
@@ -38,8 +41,8 @@ describe('isDirty', () => {
 
     const name = form.register('name', 'John')
 
-    expect(name.isDirty.value).toEqual(false)
-    expect(form.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toBeFalsy()
+    expect(form.isDirty.value).toBeFalsy()
   })
 
   it('should be true when a field is changed', () => {
@@ -54,8 +57,8 @@ describe('isDirty', () => {
 
     name.setValue('John')
 
-    expect(name.isDirty.value).toEqual(true)
-    expect(form.isDirty.value).toEqual(true)
+    expect(name.isDirty.value).toBeTruthy()
+    expect(form.isDirty.value).toBeTruthy()
   })
 
   it('should be false when a field is changed back to its initial value', () => {
@@ -71,11 +74,11 @@ describe('isDirty', () => {
     name.setValue('John')
     name.setValue(null)
 
-    expect(name.isDirty.value).toEqual(false)
-    expect(form.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toBeFalsy()
+    expect(form.isDirty.value).toBeFalsy()
   })
 
-  it('should be false when a field is changed back to its initial value', () => {
+  it('should be false when a field is changed back to its initial value with default value', () => {
     const form = useForm({
       schema: basicSchema,
       onSubmit: (data) => {
@@ -88,8 +91,8 @@ describe('isDirty', () => {
     name.setValue('Joe')
     name.setValue('John')
 
-    expect(name.isDirty.value).toEqual(false)
-    expect(form.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toBeFalsy()
+    expect(form.isDirty.value).toBeFalsy()
   })
 
   it('should be false after the form has been submitted', async () => {
@@ -107,7 +110,7 @@ describe('isDirty', () => {
 
     await form.submit()
 
-    expect(name.isDirty.value).toEqual(false)
-    expect(form.isDirty.value).toEqual(false)
+    expect(name.isDirty.value).toBeFalsy()
+    expect(form.isDirty.value).toBeFalsy()
   })
 })
