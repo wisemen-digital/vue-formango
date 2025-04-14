@@ -1,0 +1,1 @@
+import{_ as i,c as a,ag as n,o as l}from"./chunks/framework.Di3dN6l_.js";const E=JSON.parse('{"title":"Field","description":"","frontmatter":{},"headers":[],"relativePath":"api/field.md","filePath":"api/field.md"}'),h={name:"api/field.md"};function t(k,s,e,p,d,r){return l(),a("div",null,s[0]||(s[0]=[n("",13)]))}const F=i(h,[["render",t]]);export{E as __pageData,F as default};
