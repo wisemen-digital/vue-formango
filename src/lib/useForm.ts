@@ -1,19 +1,54 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { computed, ref, shallowReactive, toValue, watch } from 'vue'
+/* eslint-disable unicorn/no-keyword-prefix */
 import deepClone from 'clone-deep'
-import type { DeepPartial, Field, FieldArray, Form, FormattedError, MaybePromise, NestedNullableKeys, Path, Register, RegisterArray, StandardSchemaV1, Unregister } from '../types'
-import { generateId, get, isSubPath, set, unset } from '../utils'
-import { registerFieldWithDevTools, registerFormWithDevTools, unregisterFieldWithDevTools } from '../devtools/devtools'
+import type {
+  ComputedRef,
+  MaybeRefOrGetter,
+  Ref,
+} from 'vue'
+import {
+  computed,
+  ref,
+  shallowReactive,
+  toValue,
+  watch,
+} from 'vue'
+
+import {
+  registerFieldWithDevTools,
+  registerFormWithDevTools,
+  unregisterFieldWithDevTools,
+} from '../devtools/devtools'
+import type {
+  DeepPartial,
+  Field,
+  FieldArray,
+  Form,
+  FormattedError,
+  MaybePromise,
+  NestedNullableKeys,
+  Path,
+  Register,
+  RegisterArray,
+  StandardSchemaV1,
+  Unregister,
+} from '../types'
+import {
+  generateId,
+  get,
+  isSubPath,
+  set,
+  unset,
+} from '../utils'
 
 interface UseFormOptions<TSchema extends StandardSchemaV1> {
-  /**
-   * The zod schema of the form.
-   */
-  schema: TSchema
   /**
    * The initial state of the form
    */
   initialState?: MaybeRefOrGetter<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>> | null>
+  /**
+   * The zod schema of the form.
+   */
+  schema: TSchema
   /**
    * Called when the form is valid and submitted.
    * @param data The current form data.
@@ -23,44 +58,54 @@ interface UseFormOptions<TSchema extends StandardSchemaV1> {
    * Called when the form is attempted to be submitted, but is invalid.
    * Only called for client-side validation.
    */
-  onSubmitError?: ({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void
+  onSubmitError?: ({
+    data, errors,
+  }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>
+    errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void
 }
 
 export function useForm<TSchema extends StandardSchemaV1>(
   {
-    schema,
     initialState,
+    schema,
     onSubmit,
     onSubmitError,
-  }: UseFormOptions<TSchema>): Form<TSchema> {
+  }: UseFormOptions<TSchema>,
+): Form<TSchema> {
   // Generate a unique id for the form
   // Used in devtools
   const formId = generateId()
   // The current state of the form
   // When a field is registered, it will be added to this object
   // The form will only be submitted if this state matches the schema
-  const form = ref<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>({} as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>) as Ref<Record<string, unknown>>
+  const form = ref<DeepPartial<StandardSchemaV1.InferOutput<TSchema>>>(
+    {} as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
+  ) as Ref<Record<string, unknown>>
 
   // The errors of the form
   const rawErrors = ref<readonly StandardSchemaV1.Issue[]>([])
   const formattedErrors = computed<FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]>(() => {
     return rawErrors.value.map((error) => {
-      if (error.path == null)
+      if (error.path == null) {
         return error
+      }
 
-      const newPath = error.path
-        ?.map(item => (typeof item === 'object' ? item.key : item))
+      const mappedPath = error.path
+        ?.map((item) => (typeof item === 'object' ? item.key : item))
         .join('.')
 
       return {
         message: error.message,
-        path: newPath,
+        path: mappedPath,
       }
     }) as FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]
   })
 
   const onSubmitCb: ((data: StandardSchemaV1.InferOutput<TSchema>) => MaybePromise<void>) | null = onSubmit
-  const onSubmitFormErrorCb: (({ data, errors }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>; errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void) | undefined = onSubmitError
+  const onSubmitFormErrorCb: (({
+    data, errors,
+  }: { data: DeepPartial<NestedNullableKeys<StandardSchemaV1.InferOutput<TSchema>>>
+    errors: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[] }) => void) | undefined = onSubmitError
 
   const isSubmitting = ref<boolean>(false)
   const hasAttemptedToSubmit = ref<boolean>(false)
@@ -84,14 +129,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
   const registeredFields = shallowReactive(new Map<string, Field<any, any>>())
   const registeredFieldArrays = shallowReactive(new Map<string, FieldArray<any>>())
 
-  if (initialState != null)
+  if (initialState != null) {
     Object.assign(form.value, deepClone(toValue(initialState)))
+  }
 
   const isDirty = computed<boolean>(() => {
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
-    ].some(field => toValue(field.isDirty))
+    ].some((field) => toValue(field.isDirty))
   })
 
   const isValid = computed<boolean>(() => {
@@ -103,41 +149,48 @@ export function useForm<TSchema extends StandardSchemaV1>(
       initialFormState.value = deepClone(toValue(newInitialState)) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
       Object.assign(form.value, deepClone(toValue(newInitialState)))
     }
-  }, {
-    deep: true,
-  })
+  }, { deep: true })
 
-  const getIdByPath = (
+  function getIdByPath(
     paths: Map<string, string>,
     path: string,
-  ): string | null => [...paths.entries()].find(([, p]) => p === path)?.[0] ?? null
-
-  const getIsTrackedbyId = (
-    trackedDependencies: Map<string, ComputedRef<unknown>>,
-    pathId: string,
-  ): boolean => trackedDependencies.get(pathId)?.effect.active ?? false
+  ): string | null {
+    return [
+      ...paths.entries(),
+    ].find(([
+      , p,
+    ]) => p === path)?.[0] ?? null
+  }
 
   // form.register('array.0')
   // form.register('array.1')
   // form.unregister('array.0') --> array.1 is now array.0
   // form.register('array.1') --> should work since array.1 -> array.0
-  const updatePaths = (path: string): void => {
+  function updatePaths(path: string): void {
     const isArray = !Number.isNaN(path.split('.').pop())
 
     if (isArray) {
-      const index = parseInt(path.split('.').pop() ?? '0', 10)
+      const index = Number.parseInt(path.split('.').pop() ?? '0', 10)
       const parentPath = path.split('.').slice(0, -1).join('.')
 
       // Find all paths that start with the parent path
-      const matchingPaths = [...paths.value.entries()].filter(([, p]) => p.startsWith(parentPath))
+      const matchingPaths = [
+        ...paths.value.entries(),
+      ].filter(([
+        , p,
+      ]) => p.startsWith(parentPath))
 
-      for (const [id, p] of matchingPaths) {
+      for (const [
+        id,
+        p,
+      ] of matchingPaths) {
         // Only update paths that have a number after the parent path
-        if (!p.startsWith(`${parentPath}.`))
+        if (!p.startsWith(`${parentPath}.`)) {
           continue
+        }
 
         // Only keep the number part of the path, in case there are other characters after it
-        const i = parseInt(p.replace(`${parentPath}.`, ''), 10)
+        const i = Number.parseInt(p.replace(`${parentPath}.`, ''), 10)
 
         if (i > index) {
           const newPath = `${parentPath}.${i - 1}`
@@ -153,14 +206,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
     else {
       const id = getIdByPath(paths.value, path) ?? null
 
-      if (id === null)
+      if (id === null) {
         throw new Error('Path not found')
+      }
 
       paths.value.delete(id)
     }
   }
 
-  const getChildPaths = (path: string): (Field<any, any> | FieldArray<any>)[] => {
+  function getChildPaths(path: string): (Field<any, any> | FieldArray<any>)[] {
     return [
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
@@ -169,42 +223,27 @@ export function useForm<TSchema extends StandardSchemaV1>(
     })
   }
 
-  const createField = (
+  function createField(
     id: string,
     path: string,
     defaultOrExistingValue: unknown,
-  ): Field<any, any> => {
+  ): Field<any, any> {
     const field: Field<any, any> = {
       '_id': id,
-      '_path': computed(() => path),
       'isChanged': ref(false),
-      'isValid': computed(() => false),
       'isDirty': computed(() => false),
-      'rawErrors': computed(() => []),
       'isTouched': computed(() => false),
-      'modelValue': computed(() => defaultOrExistingValue),
-      'errors': computed(() => []),
-      'onUpdate:modelValue': (newValue) => {
-        if (field._path.value === null)
-          return
-        set(form.value, field._path.value, newValue)
-      },
-      'onBlur': () => {
-        field._isTouched.value = true
-      },
-      'onChange': () => {
-        field.isChanged.value = true
-      },
+      'isValid': computed(() => false),
       '_isTouched': ref(false),
-      'value': computed(() => defaultOrExistingValue),
-      'setValue': (newValue) => {
-        field['onUpdate:modelValue'](newValue)
-      },
+      '_path': computed(() => path),
+      'errors': computed(() => []),
+      'modelValue': computed(() => defaultOrExistingValue),
+      'rawErrors': computed(() => []),
       'register': (childPath, defaultValue) => {
         const currentPath = paths.value.get(id)
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        // eslint-disable-next-line ts/no-use-before-define
         return register(fullPath, defaultValue) as Field<any, any>
       },
       'registerArray': (childPath, defaultValue) => {
@@ -212,61 +251,86 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
         const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        // eslint-disable-next-line ts/no-use-before-define
         return registerArray(fullPath, defaultValue) as FieldArray<any>
+      },
+      'setValue': (newValue) => {
+        field['onUpdate:modelValue'](newValue)
+      },
+      'value': computed(() => defaultOrExistingValue),
+      'onBlur': () => {
+        field._isTouched.value = true
+      },
+      'onChange': () => {
+        field.isChanged.value = true
+      },
+      'onUpdate:modelValue': (newValue) => {
+        if (field._path.value === null) {
+          return
+        }
+
+        set(form.value, field._path.value, newValue)
       },
     }
 
     return field
   }
 
-  const createFieldArray = (
+  function createFieldArray(
     id: string,
     path: string,
     defaultOrExistingValue: unknown[],
-  ): FieldArray<any> => {
+  ): FieldArray<any> {
     const fields = ref<string[]>([])
 
     for (let i = 0; i < defaultOrExistingValue.length; i++) {
       const fieldId = generateId()
+
       fields.value.push(fieldId)
     }
 
-    const insert = (index: number, value: unknown): Field<any, any> => {
+    function insert(index: number, value: unknown): Field<any, any> {
       const path = paths.value.get(id) as string
 
       fields.value[index] = generateId()
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+
+      // eslint-disable-next-line ts/no-use-before-define
       return register(`${path}.${index}` as Path<TSchema>, value as any)
     }
 
-    const remove = (index: number): void => {
+    function remove(index: number): void {
       const currentPath = paths.value.get(id) as string
 
       fields.value.splice(index, 1)
 
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      // eslint-disable-next-line ts/no-use-before-define
       unregister(`${currentPath}.${index}` as Path<StandardSchemaV1.InferOutput<TSchema>>)
     }
 
-    const prepend = (value: unknown): void => {
+    function prepend(value: unknown): void {
       insert(0, value)
     }
 
-    const append = (value: unknown): Field<any, any> => {
+    function append(value: unknown): Field<any, any> {
       return insert(fields.value.length, value)
     }
 
-    const pop = (): void => {
+    function pop(): void {
       remove(fields.value.length - 1)
     }
 
-    const shift = (): void => {
+    function shift(): void {
       remove(0)
     }
 
-    const move = (from: number, to: number): void => {
-      [fields.value[from], fields.value[to]] = [fields.value[to], fields.value[from]]
+    function move(from: number, to: number): void {
+      [
+        fields.value[from],
+        fields.value[to],
+      ] = [
+        fields.value[to],
+        fields.value[from],
+      ]
 
       const currentPath = paths.value.get(id) as string
 
@@ -284,16 +348,22 @@ export function useForm<TSchema extends StandardSchemaV1>(
       const fromId = getIdByPath(paths.value, fromPath)
       const toId = getIdByPath(paths.value, toPath)
 
-      if (fromId === null || toId === null)
+      if (fromId === null || toId === null) {
         throw new Error('Path not found')
+      }
 
-      for (const [id, p] of paths.value.entries()) {
+      for (const [
+        id,
+        p,
+      ] of paths.value.entries()) {
         if (p.startsWith(fromPath)) {
           const newPath = p.replace(fromPath, toPath)
+
           paths.value.set(id, newPath)
         }
         else if (p.startsWith(toPath)) {
           const newPath = p.replace(toPath, fromPath)
+
           paths.value.set(id, newPath)
         }
       }
@@ -302,48 +372,47 @@ export function useForm<TSchema extends StandardSchemaV1>(
       paths.value.set(toId, fromPath)
     }
 
-    const empty = (): void => {
-      for (let i = fields.value.length - 1; i >= 0; i--)
+    function empty(): void {
+      for (let i = fields.value.length - 1; i >= 0; i--) {
         remove(i)
+      }
     }
 
-    const setValue = (value: unknown): void => {
+    function setValue(value: unknown): void {
       empty()
 
-      for (const arrayValue of value as unknown[])
+      for (const arrayValue of value as unknown[]) {
         append(arrayValue)
+      }
     }
 
     const fieldArray: FieldArray<any> = ({
       _id: id,
-      _path: computed(() => path),
-      isValid: computed(() => false),
       isDirty: computed(() => false),
       isTouched: computed(() => false),
-      modelValue: computed(() => defaultOrExistingValue),
-      rawErrors: computed(() => []),
-      errors: computed(() => []),
-      value: computed(() => defaultOrExistingValue),
+      isValid: computed(() => false),
+      _path: computed(() => path),
       append,
+      empty,
+      errors: computed(() => []),
       fields,
       insert,
+      modelValue: computed(() => defaultOrExistingValue),
+      move,
       pop,
       prepend,
-      remove,
-      shift,
-      move,
-      empty,
-      setValue,
+      rawErrors: computed(() => []),
       register: (childPath, defaultValue) => {
         const currentPath = paths.value.get(id) as string
         const fullPath = `${currentPath}.${childPath}` as Path<TSchema>
 
         for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
-          if (fields.value[i] === undefined)
+          if (fields.value[i] === undefined) {
             fields.value[i] = generateId()
+          }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        // eslint-disable-next-line ts/no-use-before-define
         const field = register(fullPath, defaultValue) as Field<any, any>
 
         return field
@@ -354,26 +423,31 @@ export function useForm<TSchema extends StandardSchemaV1>(
         const fullPath = `${currentPath}.${childPath}` as Path<StandardSchemaV1.InferOutput<TSchema>>
 
         for (let i = 0; i <= Number(childPath.split('.').pop()); i += 1) {
-          if (fields.value[i] === undefined)
+          if (fields.value[i] === undefined) {
             fields.value[i] = generateId()
+          }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        // eslint-disable-next-line ts/no-use-before-define
         return registerArray(fullPath, defaultValue) as FieldArray<any>
       },
+      remove,
+      setValue,
+      shift,
+      value: computed(() => defaultOrExistingValue),
     })
 
     return fieldArray
   }
 
-  const isField = (field: Field<any, any> | FieldArray<any>): field is Field<any, any> => {
+  function isField(field: Field<any, any> | FieldArray<any>): field is Field<any, any> {
     return (field as Field<any, any>)._isTouched !== undefined
   }
 
-  const getFieldWithTrackedDependencies = <TFieldArray extends Field<any, any> | FieldArray<any>>(
+  function getFieldWithTrackedDependencies<TFieldArray extends Field<any, any> | FieldArray<any>>(
     field: TFieldArray,
     initialValue: unknown,
-  ): TFieldArray => {
+  ): TFieldArray {
     const parsedStringifiedInitialValue = JSON.parse(JSON.stringify(initialValue))
 
     field._path = computed<string | null>(() => {
@@ -383,23 +457,26 @@ export function useForm<TSchema extends StandardSchemaV1>(
     })
 
     field.modelValue = computed<unknown>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return null
+      }
 
       return get(form.value, field._path.value)
     })
 
     field.value = computed(() => toValue(field.modelValue.value))
     field.isValid = computed<boolean>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return false
+      }
 
       return field.rawErrors.value.length === 0
     })
 
     field.isDirty = computed<boolean>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return false
+      }
 
       const initialValue = get(initialFormState.value, field._path.value) ?? parsedStringifiedInitialValue
 
@@ -410,60 +487,70 @@ export function useForm<TSchema extends StandardSchemaV1>(
       //   return currentFile.name !== initialFile?.name
       // }
 
-      if (field.modelValue.value === '' && initialValue === null)
+      if (field.modelValue.value === '' && initialValue === null) {
         return false
+      }
 
       return JSON.stringify(field.modelValue.value) !== JSON.stringify(initialValue)
     })
 
     field.isTouched = computed<boolean>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return false
+      }
 
       const children = getChildPaths(field._path.value)
 
-      const areAnyOfItsChildrenTouched = children.some(child => child.isTouched)
+      const areAnyOfItsChildrenTouched = children.some((child) => child.isTouched)
 
-      if (areAnyOfItsChildrenTouched)
+      if (areAnyOfItsChildrenTouched) {
         return true
+      }
 
-      if (isField(field))
+      if (isField(field)) {
         return field._isTouched.value
+      }
 
       return false
     })
 
     field.rawErrors = computed<StandardSchemaV1.Issue[]>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return []
+      }
 
       // Return all errors that have the field path as a prefix
       const filteredRawErrors = rawErrors.value.filter((error) => {
         const dottedPath = error.path
-          ?.map(item => (typeof item === 'object' ? item.key : item))
+          ?.map((item) => (typeof item === 'object' ? item.key : item))
           .join('.')
 
-        if (dottedPath == null || field._path.value == null)
+        if (dottedPath == null || field._path.value == null) {
           return false
+        }
 
         const { isPart } = isSubPath({
           childPath: dottedPath,
           parentPath: field._path.value,
         })
 
-        if (dottedPath === field._path.value)
+        if (dottedPath === field._path.value) {
           return true
+        }
 
         return isPart
       }).map((error) => {
         const normalizedPath = error.path
-          ?.map(item => (typeof item === 'object' ? item.key : item))
+          ?.map((item) => (typeof item === 'object' ? item.key : item))
 
-        if (normalizedPath == null || field._path.value == null)
+        if (normalizedPath == null || field._path.value == null) {
           return error
+        }
 
         const joinedNormalizedPath = normalizedPath.join('.')
-        const { isPart, relativePath } = isSubPath({
+        const {
+          isPart, relativePath,
+        } = isSubPath({
           childPath: joinedNormalizedPath,
           parentPath: field._path.value,
         })
@@ -487,29 +574,32 @@ export function useForm<TSchema extends StandardSchemaV1>(
     })
 
     field.errors = computed<FormattedError<any>[]>(() => {
-      if (field._path.value === null)
+      if (field._path.value === null) {
         return []
+      }
 
       const formattedErrors = rawErrors.value.filter((error) => {
         const dottedPath = error.path
-          ?.map(item => (typeof item === 'object' ? item.key : item))
+          ?.map((item) => (typeof item === 'object' ? item.key : item))
           .join('.')
 
-        if (dottedPath == null || field._path.value == null)
+        if (dottedPath == null || field._path.value == null) {
           return false
+        }
 
         const { isPart } = isSubPath({
           childPath: dottedPath,
           parentPath: field._path.value,
         })
 
-        if (dottedPath === field._path.value)
+        if (dottedPath === field._path.value) {
           return true
+        }
 
         return isPart
       }).map((error: StandardSchemaV1.Issue) => {
         const normalizedPath = error.path
-          ?.map(item => (typeof item === 'object' ? item.key : item))
+          ?.map((item) => (typeof item === 'object' ? item.key : item))
 
         if (normalizedPath == null || field._path.value == null) {
           return {
@@ -528,7 +618,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
           }
         }
 
-        const { isPart, relativePath } = isSubPath({
+        const {
+          isPart, relativePath,
+        } = isSubPath({
           childPath: joinedNormalizedPath,
           parentPath: field._path.value,
         })
@@ -552,21 +644,22 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return field
   }
 
-  const registerParentPaths = (path: string): void => {
+  function registerParentPaths(path: string): void {
     const pathParts = path.split('.')
 
     for (let i = pathParts.length - 1; i >= 0; i--) {
       const part = pathParts[i]
 
-      if (!isNaN(Number(part))) {
+      if (!Number.isNaN(Number(part))) {
         const arrayPath = pathParts.slice(0, i + 1).join('.')
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        // eslint-disable-next-line ts/no-use-before-define
         register(arrayPath as Path<TSchema>)
       }
     }
   }
 
+  // eslint-disable-next-line func-style
   const register: Register<TSchema> = (path, defaultValue) => {
     const existingId = getIdByPath(paths.value, path)
 
@@ -578,20 +671,23 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
       if (field === null) {
         const value = get(form.value, path)
+
         field = createField(existingId, path, value)
       }
 
       // Check if value of the field is null or empty array, if so, set default value
-      const isEmpty = field.modelValue.value === null || (Array.isArray(field.modelValue.value) && field.modelValue.value.length === 0)
+      const isEmpty = field.modelValue.value === null
+        || (Array.isArray(field.modelValue.value) && field.modelValue.value.length === 0)
 
-      if (isEmpty && defaultValue !== undefined)
+      if (isEmpty && defaultValue !== undefined) {
         field.setValue(clonedDefaultValue)
+      }
 
       // If it is, check if it is still being tracked
-      const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
+      // const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
       // If it is, return the field
-      if (existingTrackedDependency)
-        return field
+      // if (existingTrackedDependency)
+      //   return field
 
       // If it isn't being tracked anymore, retrack it
       return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
@@ -603,8 +699,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
     const value = get(form.value, path)
 
     // If the value is undefined, set it to the default value
-    if (value == null)
+    if (value == null) {
       set(form.value, path, clonedDefaultValue ?? null)
+    }
 
     const id = generateId()
 
@@ -626,6 +723,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return getFieldWithTrackedDependencies(field, clonedDefaultValue ?? null)
   }
 
+  // eslint-disable-next-line func-style
   const registerArray: RegisterArray<TSchema> = (path, defaultValue) => {
     const existingId = getIdByPath(paths.value, path)
     const clonedDefaultValue = deepClone(defaultValue)
@@ -637,15 +735,16 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
       if (fieldArray === null) {
         const value = get(form.value, path)
+
         fieldArray = createFieldArray(existingId, path, value ?? [])
       }
 
       // Check if it is still being tracked
-      const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
+      // const existingTrackedDependency = getIsTrackedbyId(trackedDependencies, existingId)
 
       // If it is, return the field
-      if (existingTrackedDependency)
-        return fieldArray
+      // if (existingTrackedDependency)
+      //   return fieldArray
 
       // If it isn't being tracked anymore, retrack it
       return getFieldWithTrackedDependencies(fieldArray, [])
@@ -654,9 +753,11 @@ export function useForm<TSchema extends StandardSchemaV1>(
     // If it isn't registered, register it
     // Even if the field is not registered, it might already have a value
     const value = get(form.value, path)
+
     // If the value is undefined, set it to the default value
-    if (value == null)
+    if (value == null) {
       set(form.value, path, [])
+    }
 
     const id = generateId()
 
@@ -672,9 +773,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
     if (shouldSetDefaultValue) {
       const defaultValueAsArray = clonedDefaultValue as unknown[]
 
-      defaultValueAsArray.forEach((value) => {
+      for (const value of defaultValueAsArray) {
         fieldArray.append(value)
-      })
+      }
     }
 
     // Register the field
@@ -689,13 +790,15 @@ export function useForm<TSchema extends StandardSchemaV1>(
     return getFieldWithTrackedDependencies(fieldArray, [])
   }
 
+  // eslint-disable-next-line func-style
   const unregister: Unregister<TSchema> = (path) => {
     const id = getIdByPath(paths.value, path)
 
     unset(form.value, path)
 
-    if (id === null)
+    if (id === null) {
       return
+    }
 
     updatePaths(path)
 
@@ -705,12 +808,13 @@ export function useForm<TSchema extends StandardSchemaV1>(
     unregisterFieldWithDevTools(id)
   }
 
-  const blurAll = (): void => {
-    for (const field of registeredFields.values())
+  function blurAll(): void {
+    for (const field of registeredFields.values()) {
       field.onBlur()
+    }
   }
 
-  const submit = async (): Promise<void> => {
+  async function submit(): Promise<void> {
     hasAttemptedToSubmit.value = true
 
     blurAll()
@@ -720,6 +824,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
         data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
         errors: formattedErrors.value,
       })
+
       return
     }
 
@@ -728,15 +833,18 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
     isSubmitting.value = true
 
-    if (onSubmitCb == null)
+    if (onSubmitCb == null) {
       throw new Error('Attempted to submit form but `onSubmitForm` callback is not registered')
+    }
 
     const validatedResult = await schema['~standard'].validate(form.value)
+
     if (validatedResult.issues) {
       onSubmitFormErrorCb?.({
         data: form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>,
         errors: formattedErrors.value,
       })
+
       return
     }
 
@@ -747,12 +855,13 @@ export function useForm<TSchema extends StandardSchemaV1>(
     isSubmitting.value = false
   }
 
-  const setValues = (values: DeepPartial<StandardSchemaV1.InferOutput<TSchema>>): void => {
-    for (const path in values)
+  function setValues(values: DeepPartial<StandardSchemaV1.InferOutput<TSchema>>): void {
+    for (const path in values) {
       set(form.value, path, values[path])
+    }
   }
 
-  const addErrors = (err: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]): void => {
+  function addErrors(err: FormattedError<StandardSchemaV1.InferOutput<TSchema>>[]): void {
     const standardErrors = err.map((error) => {
       if (error.path == null) {
         return {
@@ -779,8 +888,10 @@ export function useForm<TSchema extends StandardSchemaV1>(
     const result = await schema['~standard'].validate(form.value)
 
     const hasErrors = result.issues != null && result.issues.length > 0
+
     if (hasErrors) {
       rawErrors.value = result.issues
+
       return
     }
 
@@ -790,35 +901,40 @@ export function useForm<TSchema extends StandardSchemaV1>(
     immediate: true,
   })
 
-  const reset = () => {
-    if (initialState == null)
+  function reset() {
+    if (initialState == null) {
       throw new Error('In order to reset the form, you need to provide an initial state')
+    }
 
     Object.assign(form.value, deepClone(toValue(initialState)))
-    registeredFields.forEach((field) => {
+
+    for (const [
+      _,
+      field,
+    ] of registeredFields) {
       field._isTouched.value = false
-    })
+    }
 
     hasAttemptedToSubmit.value = false
   }
 
   const formObject: Form<TSchema> = {
     _id: formId,
-    state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
+    hasAttemptedToSubmit: computed(() => hasAttemptedToSubmit.value),
+    isDirty: computed(() => isDirty.value),
+    isSubmitting: computed(() => isSubmitting.value),
+    isValid,
+    addErrors,
+    blurAll,
     errors: computed(() => formattedErrors.value),
     rawErrors: computed(() => rawErrors.value) as ComputedRef<StandardSchemaV1.Issue[]>,
-    isDirty: computed(() => isDirty.value),
-    isValid,
-    isSubmitting: computed(() => isSubmitting.value),
-    hasAttemptedToSubmit: computed(() => hasAttemptedToSubmit.value),
     register,
     registerArray,
-    unregister,
-    submit,
-    setValues,
-    addErrors,
     reset,
-    blurAll,
+    setValues,
+    state: computed(() => form.value as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>),
+    submit,
+    unregister,
   }
 
   registerFormWithDevTools(formObject)

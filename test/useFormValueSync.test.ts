@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
-import { objectArraySchema, objectSchema } from './testUtils'
+import {
+  objectArraySchema,
+  objectSchema,
+} from './testUtils'
 
 describe('modelValue and value stay in sync', () => {
-  it('should update both when setting value', async () => {
+  it('should update both when setting value', () => {
     const form = useForm({
       schema: objectSchema,
       onSubmit: (data) => {
@@ -16,40 +24,32 @@ describe('modelValue and value stay in sync', () => {
 
     a.setValue({
       b: 'John',
-      bObj: {
-        c: '123',
-      },
+      bObj: { c: '123' },
     })
 
     expect(a.modelValue.value).toEqual({
       b: 'John',
-      bObj: {
-        c: '123',
-      },
+      bObj: { c: '123' },
     })
 
     expect(a.value.value).toEqual({
       b: 'John',
-      bObj: {
-        c: '123',
-      },
+      bObj: { c: '123' },
     })
 
-    expect(b.modelValue.value).toEqual('John')
-    expect(b.value.value).toEqual('John')
+    expect(b.modelValue.value).toBe('John')
+    expect(b.value.value).toBe('John')
   })
 
-  it('should update both when setting initial value', async () => {
+  it('should update both when setting initial value', () => {
     const form = useForm({
-      schema: objectSchema,
       initialState: {
         a: {
           b: 'John',
-          bObj: {
-            c: '123',
-          },
+          bObj: { c: '123' },
         },
       },
+      schema: objectSchema,
       onSubmit: (data) => {
         return data
       },
@@ -60,23 +60,19 @@ describe('modelValue and value stay in sync', () => {
 
     expect(a.modelValue.value).toEqual({
       b: 'John',
-      bObj: {
-        c: '123',
-      },
+      bObj: { c: '123' },
     })
 
     expect(a.value.value).toEqual({
       b: 'John',
-      bObj: {
-        c: '123',
-      },
+      bObj: { c: '123' },
     })
 
-    expect(b.modelValue.value).toEqual('John')
-    expect(b.value.value).toEqual('John')
+    expect(b.modelValue.value).toBe('John')
+    expect(b.value.value).toBe('John')
   })
 
-  it('should update array when setting value', async () => {
+  it('should update array when setting value', () => {
     const form = useForm({
       schema: objectArraySchema,
       onSubmit: (data) => {
@@ -86,9 +82,15 @@ describe('modelValue and value stay in sync', () => {
 
     const array = form.registerArray('array')
 
-    array.setValue([{ name: 'John' }])
+    array.setValue([
+      { name: 'John' },
+    ])
 
-    expect(array.modelValue.value).toEqual([{ name: 'John' }])
-    expect(array.value.value).toEqual([{ name: 'John' }])
+    expect(array.modelValue.value).toEqual([
+      { name: 'John' },
+    ])
+    expect(array.value.value).toEqual([
+      { name: 'John' },
+    ])
   })
 })

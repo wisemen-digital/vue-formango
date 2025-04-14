@@ -1,7 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import { z } from 'zod'
+
 import { useForm } from '../src/lib/useForm'
-import { basicArraySchema, objectArraySchema, objectSchema } from './testUtils'
+import {
+  basicArraySchema,
+  objectArraySchema,
+  objectSchema,
+} from './testUtils'
 
 describe('register a field from a field or fieldArray', () => {
   it('should register a field from a field', () => {
@@ -15,13 +24,9 @@ describe('register a field from a field or fieldArray', () => {
     const a = form.register('a')
     const b = a.register('b')
 
-    expect(b.modelValue.value).toEqual(null)
+    expect(b.modelValue.value).toBeNull()
 
-    expect(form.state.value).toEqual({
-      a: {
-        b: null,
-      },
-    })
+    expect(form.state.value).toEqual({ a: { b: null } })
   })
 
   it('should register a field from a field with a default value', () => {
@@ -35,31 +40,27 @@ describe('register a field from a field or fieldArray', () => {
     const a = form.register('a')
     const b = a.register('b', 'John')
 
-    expect(b.modelValue.value).toEqual('John')
+    expect(b.modelValue.value).toBe('John')
 
-    expect(form.state.value).toEqual({
-      a: {
-        b: 'John',
-      },
-    })
+    expect(form.state.value).toEqual({ a: { b: 'John' } })
   })
 
-  it('should register a fieldArray with a default value from a field', async () => {
+  it('should register a fieldArray with a default value from a field', () => {
     const form = useForm({
-      schema: z.object({
-        obj: z.object({
-          array: z.array(z.string()),
-        }),
-      }),
+      schema: z.object({ obj: z.object({ array: z.array(z.string()) }) }),
       onSubmit: (data) => {
         return data
       },
     })
 
     const obj = form.register('obj')
-    const array = obj.registerArray('array', ['John'])
+    const array = obj.registerArray('array', [
+      'John',
+    ])
 
-    expect(array.modelValue.value).toEqual(['John'])
+    expect(array.modelValue.value).toEqual([
+      'John',
+    ])
   })
 
   it('should register a field from a field which has been registered from a field', () => {
@@ -74,15 +75,9 @@ describe('register a field from a field or fieldArray', () => {
     const b = a.register('bObj')
     const c = b.register('c')
 
-    expect(c.modelValue.value).toEqual(null)
+    expect(c.modelValue.value).toBeNull()
 
-    expect(form.state.value).toEqual({
-      a: {
-        bObj: {
-          c: null,
-        },
-      },
-    })
+    expect(form.state.value).toEqual({ a: { bObj: { c: null } } })
   })
 
   it('should register a field from an array field', () => {
@@ -97,10 +92,12 @@ describe('register a field from a field or fieldArray', () => {
 
     const array0Name = array.register('0')
 
-    expect(array0Name.modelValue.value).toEqual(null)
+    expect(array0Name.modelValue.value).toBeNull()
 
     expect(form.state.value).toEqual({
-      array: [null],
+      array: [
+        null,
+      ],
     })
   })
 
@@ -110,13 +107,13 @@ describe('register a field from a field or fieldArray', () => {
 
   it('should be possible to modify a field array without registering its children', () => {
     const form = useForm({
-      schema: objectArraySchema,
       initialState: {
         array: [
           { name: 'John' },
           { name: 'Doe' },
         ],
       },
+      schema: objectArraySchema,
       onSubmit: (data) => {
         return data
       },
@@ -129,7 +126,9 @@ describe('register a field from a field or fieldArray', () => {
     array.remove(1)
 
     expect(form.state.value).toEqual({
-      array: [{ name: 'John' }],
+      array: [
+        { name: 'John' },
+      ],
     })
   })
 })

@@ -1,13 +1,14 @@
 import { defineBuildConfig } from 'unbuild'
 
 export default defineBuildConfig({
+  clean: true,
+  declaration: true,
   entries: [
     'src/index',
   ],
-  externals: ['vue', 'zod'],
-  declaration: true,
-  clean: true,
-  rollup: {
-    emitCJS: true,
-  },
+  externals: [
+    'vue',
+    'zod',
+  ],
+  rollup: { emitCJS: true },
 })

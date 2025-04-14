@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
-import { basicArraySchema, sleep } from './testUtils'
+import {
+  basicArraySchema,
+  sleep,
+} from './testUtils'
 
 describe('array field modifiers', () => {
   it('should move a field in an array', () => {
@@ -19,7 +27,10 @@ describe('array field modifiers', () => {
     array.move(1, 0)
 
     expect(form.state.value).toEqual({
-      array: ['Doe', 'John'],
+      array: [
+        'Doe',
+        'John',
+      ],
     })
   })
 
@@ -43,7 +54,10 @@ describe('array field modifiers', () => {
     array.move(0, 1)
 
     expect(form.state.value).toEqual({
-      array: ['John', null],
+      array: [
+        'John',
+        null,
+      ],
     })
   })
 })

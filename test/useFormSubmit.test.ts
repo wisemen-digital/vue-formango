@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
-import { basicSchema, sleep } from './testUtils'
+import {
+  basicSchema,
+  sleep,
+} from './testUtils'
 
 describe('submit', () => {
   it('should submit', async () => {
@@ -9,6 +17,7 @@ describe('submit', () => {
       schema: basicSchema,
       onSubmit: (data) => {
         submitted = true
+
         return data
       },
     })
@@ -18,8 +27,8 @@ describe('submit', () => {
     await sleep(0)
     await form.submit()
 
-    expect(submitted).toEqual(true)
-    expect(form.hasAttemptedToSubmit.value).toEqual(true)
+    expect(submitted).toBeTruthy()
+    expect(form.hasAttemptedToSubmit.value).toBeTruthy()
   })
 
   it('should submit with data', async () => {
@@ -43,10 +52,8 @@ describe('submit', () => {
 
     await sleep(0)
 
-    expect(submitted).toEqual(true)
-    expect(submittedData).toEqual({
-      name: 'John',
-    })
+    expect(submitted).toBeTruthy()
+    expect(submittedData).toEqual({ name: 'John' })
   })
 
   it('should blur all fields', async () => {
@@ -60,12 +67,12 @@ describe('submit', () => {
 
     const name = form.register('name', 'John')
 
-    expect(name.isTouched.value).toEqual(false)
+    expect(name.isTouched.value).toBeFalsy()
 
     await sleep(0)
     await form.submit()
 
-    expect(name.isTouched.value).toEqual(true)
+    expect(name.isTouched.value).toBeTruthy()
   })
 
   it('should not submit if there are errors', async () => {
@@ -85,7 +92,7 @@ describe('submit', () => {
     await sleep(0)
     await form.submit()
 
-    expect(submitted).toEqual(false)
+    expect(submitted).toBeFalsy()
   })
 
   it('should call `onSubmitError` if there are errors', async () => {
@@ -106,7 +113,7 @@ describe('submit', () => {
     await sleep(0)
     await form.submit()
 
-    expect(isCalled).toEqual(true)
+    expect(isCalled).toBeTruthy()
   })
 
   it('should call `onSubmitError` if there are errors and pass data and errors to the callback function', async () => {
@@ -119,7 +126,9 @@ describe('submit', () => {
       onSubmit: (data) => {
         return data
       },
-      onSubmitError: ({ data, errors }) => {
+      onSubmitError: ({
+        data, errors,
+      }) => {
         isCalled = true
         submittedErrorData = data
         submittedErrors = errors
@@ -131,9 +140,7 @@ describe('submit', () => {
     await sleep(0)
     await form.submit()
 
-    expect(submittedErrorData).toEqual({
-      name: 'Jon',
-    })
+    expect(submittedErrorData).toEqual({ name: 'Jon' })
 
     expect(submittedErrors).toEqual([
       {
@@ -142,6 +149,6 @@ describe('submit', () => {
       },
     ])
 
-    expect(isCalled).toEqual(true)
+    expect(isCalled).toBeTruthy()
   })
 })

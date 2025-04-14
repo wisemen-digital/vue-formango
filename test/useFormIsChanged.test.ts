@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
 import { basicSchema } from './testUtils'
 
@@ -14,7 +19,7 @@ describe('isChanged', () => {
 
     const name = form.register('name')
 
-    expect(name.isChanged.value).toEqual(false)
+    expect(name.isChanged.value).toBeFalsy()
   })
 
   it('should be true when `onChange` is called', () => {
@@ -29,6 +34,6 @@ describe('isChanged', () => {
 
     name.onChange()
 
-    expect(name.isChanged.value).toEqual(true)
+    expect(name.isChanged.value).toBeTruthy()
   })
 })
