@@ -71,6 +71,11 @@ export interface Field<TValue, TDefaultValue = undefined> {
      */
   onBlur: () => void
   /**
+   * Blur the field and all it's children.
+   */
+  blurAll: () => void
+
+  /**
      * Called when the field input value is changed.
     */
   onChange: () => void
@@ -161,6 +166,12 @@ export interface FieldArray<TValue> {
    * This is an alias of `attrs.modelValue`.
   */
   value: ComputedRef<TValue[]>
+  /**
+   * Blur the field and all it's children.
+   */
+
+  blurAll: () => void
+
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.

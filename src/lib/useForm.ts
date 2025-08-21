@@ -182,6 +182,25 @@ export function useForm<TSchema extends StandardSchemaV1>(
       'isDirty': computed(() => false),
       'rawErrors': computed(() => []),
       'isTouched': computed(() => false),
+      'blurAll': () => {
+        field._isTouched.value = true
+        registeredFields
+          .values()
+          .filter((registeredField) => {
+            if (field._path.value == null || registeredField._path.value == null)
+              return false
+
+            const { isPart } = isSubPath({
+              childPath: registeredField._path.value,
+              parentPath: field._path.value,
+            })
+
+            return isPart
+          })
+          .forEach((registeredField) => {
+            registeredField.blurAll()
+          })
+      },
       'modelValue': computed(() => defaultOrExistingValue),
       'errors': computed(() => []),
       'onUpdate:modelValue': (newValue) => {
@@ -324,6 +343,25 @@ export function useForm<TSchema extends StandardSchemaV1>(
       rawErrors: computed(() => []),
       errors: computed(() => []),
       value: computed(() => defaultOrExistingValue),
+      blurAll: () => {
+        registeredFields
+          .values()
+          .filter((registeredField) => {
+            if (fieldArray._path.value == null || registeredField._path.value == null)
+              return false
+
+            const { isPart } = isSubPath({
+              childPath: registeredField._path.value,
+              parentPath: fieldArray._path.value,
+            })
+
+            return isPart
+          })
+          .forEach((registeredField) => {
+            registeredField.blurAll()
+          })
+      },
+
       append,
       fields,
       insert,
