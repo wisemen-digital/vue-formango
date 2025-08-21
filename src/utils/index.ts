@@ -200,3 +200,37 @@ export function isSubPath({
     relativePath,
   }
 }
+
+export function isChildOfPath({
+  childPath, parentPath,
+}: {
+  childPath: string
+  parentPath: string
+}): { isPart: boolean
+    relativePath?: string } {
+  // if childPath is a.b.c and parent path is a.b, it should return true because it is a child of that path
+  // but if parent path is a.b and childPath is a.b.c, it should return false
+
+  const childSegments = childPath.split('.')
+  const parentSegments = parentPath.split('.')
+
+  if (childSegments.length <= parentSegments.length) {
+    return { isPart: false }
+  }
+
+  for (const [
+    i,
+    parentSegment,
+  ] of parentSegments.entries()) {
+    if (childSegments[i] !== parentSegment) {
+      return { isPart: false }
+    }
+  }
+
+  const relativePath = childSegments.slice(parentSegments.length).join('.')
+
+  return {
+    isPart: true,
+    relativePath,
+  }
+}
