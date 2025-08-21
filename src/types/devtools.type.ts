@@ -1,26 +1,29 @@
-import type { Field, Form } from '.'
+import type {
+  Field,
+  Form,
+} from '.'
 
-export type NodeTypes = 'form' | 'field'
+export type NodeTypes = 'field' | 'form'
 
 export interface SelectedNodeForm {
-  type: 'form'
   formId: string
   name: string
+  type: 'form'
 }
 
 export interface SelectedNodeField {
-  type: 'field'
-  formId: string
   fieldId: string
+  formId: string
+  type: 'field'
 }
 
 export interface EncodedNode {
-  type: NodeTypes
   id: string
   name?: string
+  type: NodeTypes
 }
 
-export type SelectedNode = SelectedNodeForm | SelectedNodeField
+export type SelectedNode = SelectedNodeField | SelectedNodeForm
 
 interface ObjectWithPossiblyField {
   __FIELD__?: Field<any, any> & { __ID__: string }
@@ -31,15 +34,15 @@ export type ObjectWithPossiblyFieldRecursive = ObjectWithPossiblyField & {
 }
 
 export interface FormNode {
-  type: 'form'
-  form: Form<any>
   name?: string
+  form: Form<any>
+  type: 'form'
 }
 
 export interface FieldNode {
-  type: 'field'
   field: {
     formId: string
     field: Field<any, any>
   }
+  type: 'field'
 }

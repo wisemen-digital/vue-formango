@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
+
 import { useForm } from '../src/lib/useForm'
-import { basicSchema, objectSchema } from './testUtils'
+import {
+  basicSchema,
+  objectSchema,
+} from './testUtils'
 
 describe('isTouched', () => {
   it('should be false by default', () => {
@@ -13,7 +21,7 @@ describe('isTouched', () => {
 
     const name = form.register('name')
 
-    expect(name.isTouched.value).toEqual(false)
+    expect(name.isTouched.value).toBeFalsy()
   })
 
   it('should be true when `onBlur` is called', () => {
@@ -28,7 +36,7 @@ describe('isTouched', () => {
 
     name.onBlur()
 
-    expect(name.isTouched.value).toEqual(true)
+    expect(name.isTouched.value).toBeTruthy()
   })
 
   it('should be touched when a child field is touched', () => {
@@ -44,6 +52,6 @@ describe('isTouched', () => {
 
     b.onBlur()
 
-    expect(a.isTouched.value).toEqual(true)
+    expect(a.isTouched.value).toBeTruthy()
   })
 })

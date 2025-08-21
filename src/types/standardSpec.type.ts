@@ -1,3 +1,4 @@
+/* eslint-disable ts/no-namespace */
 /**
  * The Standard Schema interface.
  */
@@ -14,42 +15,42 @@ export declare namespace StandardSchemaV1 {
    */
   export interface Props<Input = unknown, Output = Input> {
     /**
-     * The version number of the standard.
+     * Inferred types associated with the schema.
      */
-    readonly version: 1
-    /**
-     * The vendor name of the schema library.
-     */
-    readonly vendor: string
+    readonly types?: Types<Input, Output> | undefined
     /**
      * Validates unknown input values.
      */
     readonly validate: (
       value: unknown,
-    ) => Result<Output> | Promise<Result<Output>>
+    ) => Promise<Result<Output>> | Result<Output>
     /**
-     * Inferred types associated with the schema.
+     * The vendor name of the schema library.
      */
-    readonly types?: Types<Input, Output> | undefined
+    readonly vendor: string
+    /**
+     * The version number of the standard.
+     */
+    readonly version: 1
   }
 
   /**
    * The result interface of the validate function.
    */
-  export type Result<Output> = SuccessResult<Output> | FailureResult
+  export type Result<Output> = FailureResult | SuccessResult<Output>
 
   /**
    * The result interface if validation succeeds.
    */
   export interface SuccessResult<Output> {
     /**
-     * The typed output value.
-     */
-    readonly value: Output
-    /**
      * The non-existent issues.
      */
     readonly issues?: undefined
+    /**
+     * The typed output value.
+     */
+    readonly value: Output
   }
 
   /**
@@ -73,7 +74,7 @@ export declare namespace StandardSchemaV1 {
     /**
      * The path of the issue, if any.
      */
-    readonly path?: ReadonlyArray<PropertyKey | PathSegment> | undefined
+    readonly path?: ReadonlyArray<PathSegment | PropertyKey> | undefined
   }
 
   /**

@@ -1,15 +1,14 @@
 import type {
+  ArrayKey,
+  IsTuple,
+  TupleKeys,
+} from './common.type'
+import type {
   BrowserNativeObject,
   IsAny,
   IsEqual,
   Primitive,
 } from './utils.type'
-
-import type {
-  ArrayKey,
-  IsTuple,
-  TupleKeys,
-} from './common.type'
 
 export type FieldValues = Record<string, any>
 
@@ -31,16 +30,16 @@ type AnyIsEqual<T1, T2> = T1 extends T2
  *
  * See {@link Path}
  */
-type PathImpl<K extends string | number, V, TraversedTypes> = V extends
-| Primitive
-| BrowserNativeObject
+type PathImpl<K extends number | string, V, TraversedTypes> = V extends
+  | BrowserNativeObject
+  | Primitive
   ? `${K}`
   : // Check so that we don't recurse into the same type
   // by ensuring that the types are mutually assignable
   // mutually required to avoid false positives of subtypes
   true extends AnyIsEqual<TraversedTypes, V>
     ? `${K}`
-    : `${K}` | `${K}.${PathInternal<V, TraversedTypes | V>}`
+    : `${K}.${PathInternal<V, TraversedTypes | V>}` | `${K}`
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -82,14 +81,14 @@ export type FieldPath<TFieldValues> = Path<TFieldValues>
  *
  * See {@link ArrayPath}
  */
-type ArrayPathImpl<K extends string | number, V, TraversedTypes> = V extends
-| Primitive
-| BrowserNativeObject
+type ArrayPathImpl<K extends number | string, V, TraversedTypes> = V extends
+  | BrowserNativeObject
+  | Primitive
   ? IsAny<V> extends true
     ? string
     : never
   : V extends ReadonlyArray<infer U>
-    ? U extends Primitive | BrowserNativeObject
+    ? U extends BrowserNativeObject | Primitive
       ? IsAny<V> extends true
         ? string
         : never
@@ -98,7 +97,7 @@ type ArrayPathImpl<K extends string | number, V, TraversedTypes> = V extends
     // mutually required to avoid false positives of subtypes
       true extends AnyIsEqual<TraversedTypes, V>
         ? never
-        : `${K}` | `${K}.${ArrayPathInternal<V, TraversedTypes | V>}`
+        : `${K}.${ArrayPathInternal<V, TraversedTypes | V>}` | `${K}`
     : true extends AnyIsEqual<TraversedTypes, V>
       ? never
       : `${K}.${ArrayPathInternal<V, TraversedTypes | V>}`
@@ -148,7 +147,7 @@ export type FieldArrayPath<TFieldValues extends FieldValues> =
  * PathValue<[number, string], '1'> = string
  * ```
  */
-export type PathValue<T, P extends Path<T> | ArrayPath<T>> = T extends any
+export type PathValue<T, P extends ArrayPath<T> | Path<T>> = T extends any
   ? P extends `${infer K}.${infer R}`
     ? K extends keyof T
       ? R extends Path<T[K]>

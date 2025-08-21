@@ -1,84 +1,177 @@
 import { defineConfig } from 'vitepress'
 
 const bestPractices = [
-  { text: 'I18n', link: '/best-practices/i18n' },
-  { text: 'Custom input', link: '/best-practices/custom-input' },
+  {
+    link: '/best-practices/i18n',
+    text: 'I18n',
+  },
+  {
+    link: '/best-practices/custom-input',
+    text: 'Custom input',
+  },
 ]
 
 const guide = [
-  { text: 'Getting started', link: '/guide/getting-started' },
-  { text: 'Devtools', link: '/guide/devtools' },
+  {
+    link: '/guide/getting-started',
+    text: 'Getting started',
+  },
+  {
+    link: '/guide/devtools',
+    text: 'Devtools',
+  },
 ]
 
 const api = [
-  { text: 'useForm', link: '/api/useForm' },
-  { text: 'Field', link: '/api/field' },
-  { text: 'Field array', link: '/api/field-array' },
+  {
+    link: '/api/useForm',
+    text: 'useForm',
+  },
+  {
+    link: '/api/field',
+    text: 'Field',
+  },
+  {
+    link: '/api/field-array',
+    text: 'Field array',
+  },
 ]
 
 const examples = [
-  { text: 'Subforms', link: '/examples/subforms' },
-  { text: 'External errors', link: '/examples/external-errors' },
+  {
+    link: '/examples/subforms',
+    text: 'Subforms',
+  },
+  {
+    link: '/examples/external-errors',
+    text: 'External errors',
+  },
 ]
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: '/vue-formango/',
   title: 'Formango',
-  head: [
-    ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/forms/apple-touch-icon.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/forms/favicon-32x32.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/forms/favicon-16x16.png' }],
-    ['link', { rel: 'manifest', href: '/forms/site.webmanifest' }],
-    ['link', { rel: 'mask-icon', href: '/forms/safari-pinned-tab.svg', color: '#da532c' }],
-    ['link', { rel: 'shortcut icon', href: '/forms/favicon.ico' }],
-    ['meta', { name: 'msapplication-TileColor', content: '#da532c' }],
-    ['meta', { name: 'msapplication-config', content: '/forms/browserconfig.xml' }],
-    ['meta', { name: 'theme-color', content: '#ffffff' }],
-  ],
+  base: '/vue-formango/',
   description: 'A lightweight, zod-based Vue form library',
+  head: [
+    [
+      'link',
+      {
+        href: '/forms/apple-touch-icon.png',
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+      },
+    ],
+    [
+      'link',
+      {
+        href: '/forms/favicon-32x32.png',
+        rel: 'icon',
+        sizes: '32x32',
+        type: 'image/png',
+      },
+    ],
+    [
+      'link',
+      {
+        href: '/forms/favicon-16x16.png',
+        rel: 'icon',
+        sizes: '16x16',
+        type: 'image/png',
+      },
+    ],
+    [
+      'link',
+      {
+        href: '/forms/site.webmanifest',
+        rel: 'manifest',
+      },
+    ],
+    [
+      'link',
+      {
+        color: '#da532c',
+        href: '/forms/safari-pinned-tab.svg',
+        rel: 'mask-icon',
+      },
+    ],
+    [
+      'link',
+      {
+        href: '/forms/favicon.ico',
+        rel: 'shortcut icon',
+      },
+    ],
+    [
+      'meta',
+      {
+        name: 'msapplication-TileColor',
+        content: '#da532c',
+      },
+    ],
+    [
+      'meta',
+      {
+        name: 'msapplication-config',
+        content: '/forms/browserconfig.xml',
+      },
+    ],
+    [
+      'meta',
+      {
+        name: 'theme-color',
+        content: '#ffffff',
+      },
+    ],
+  ],
   themeConfig: {
-    search: {
-      provider: 'local',
-    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'API docs', link: '/api/useForm' },
+      {
+        link: '/guide/getting-started',
+        text: 'Guide',
+      },
+      {
+        link: '/api/useForm',
+        text: 'API docs',
+      },
 
     ],
+    search: { provider: 'local' },
 
     sidebar: [
       {
-        text: 'Guide',
         items: guide,
+        text: 'Guide',
       },
       {
-        text: 'Best practices',
         items: bestPractices,
+        text: 'Best practices',
       },
       {
-        text: 'API',
         items: api,
+        text: 'API',
       },
       {
-        text: 'Examples',
         items: examples,
+        text: 'Examples',
       },
       {
-        text: 'Changelog',
         link: '/CHANGELOG',
+        text: 'Changelog',
       },
       {
-        text: 'Playground',
         link: '/playground',
+        text: 'Playground',
       },
-
 
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/wouterlms/forms' },
+      {
+        icon: 'github',
+        link: 'https://github.com/wouterlms/forms',
+      },
     ],
   },
 })

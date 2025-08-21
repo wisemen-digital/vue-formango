@@ -1,5 +1,9 @@
 import type { UnwrapRef } from 'vue'
-import type { Field, Form } from '../types'
+
+import type {
+  Field,
+  Form,
+} from '../types'
 
 export function buildFormState(form: UnwrapRef<Form<any>>) {
   return {

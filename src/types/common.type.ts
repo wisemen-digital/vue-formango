@@ -1,4 +1,7 @@
-import type { IsAny, IsNever } from './utils.type'
+import type {
+  IsAny,
+  IsNever,
+} from './utils.type'
 
 /**
  * Type alias to `string` which describes a lodash-like path through an object.
@@ -253,7 +256,7 @@ export type TupleKeys<T extends readonly any[]> = Exclude<
  * ```
  */
 type NumericObjectKeys<T extends Traversable> = ToKey<
-  Extract<keyof T, ArrayKey | `${ArrayKey}`>
+  Extract<keyof T, `${ArrayKey}` | ArrayKey>
 >
 
 /**
@@ -288,7 +291,7 @@ export type NumericKeys<T extends Traversable> = UnionToIntersection<
  */
 export type ObjectKeys<T extends Traversable> = Exclude<
   ToKey<keyof T>,
-  `${string}.${string}` | ''
+  '' | `${string}.${string}`
 >
 
 /**
@@ -389,10 +392,10 @@ type ValidPathPrefixImpl<
 > = PT extends [infer K, ...infer R]
   ? HasKey<T, AsKey<K>> extends true
     ? ValidPathPrefixImpl<
-        EvaluateKey<T, AsKey<K>>,
-        AsPathTuple<R>,
-        AsPathTuple<[...VPT, K]>
-      >
+      EvaluateKey<T, AsKey<K>>,
+      AsPathTuple<R>,
+      AsPathTuple<[...VPT, K]>
+    >
     : VPT
   : VPT
 

@@ -14,42 +14,42 @@ If you want type definitions for various properties, you need to add `--lib DOM`
 export type Noop = () => void
 
 interface File extends Blob {
-  readonly lastModified: number
   readonly name: string
+  readonly lastModified: number
 }
 
 interface FileList {
-  readonly length: number
-  item: (index: number) => File | null
   [index: number]: File
+  item: (index: number) => File | null
+  readonly length: number
 }
 
 export type Primitive =
+  | bigint
+  | boolean
+  | number
+  | string
+  | symbol
   | null
   | undefined
-  | string
-  | number
-  | boolean
-  | symbol
-  | bigint
 
-export type BrowserNativeObject = Date | FileList | File
+export type BrowserNativeObject = Date | File | FileList
 
-export type EmptyObject = { [K in string | number]: never }
+export type EmptyObject = { [K in number | string]: never }
 
 export type NonUndefined<T> = T extends undefined ? never : T
 
 export type LiteralUnion<T extends U, U extends Primitive> =
-  | T
   | (U & { _?: never })
+  | T
 
 export type DeepPartial<T> = T extends BrowserNativeObject | NestedValue
   ? T
   : { [K in keyof T]?: DeepPartial<T[K]> }
 
 export type DeepPartialSkipArrayKey<T> = T extends
-| BrowserNativeObject
-| NestedValue
+  | BrowserNativeObject
+  | NestedValue
   ? T
   : T extends readonly any[]
     ? { [K in keyof T]: DeepPartialSkipArrayKey<T[K]> }
@@ -105,8 +105,8 @@ export type DeepMap<T, TValue> = IsAny<T> extends true
       : TValue
 
 export type IsFlatObject<T extends object> = Extract<
-  Exclude<T[keyof T], NestedValue | Date | FileList>,
-  any[] | object
+  Exclude<T[keyof T], Date | FileList | NestedValue>,
+  object | any[]
 > extends never
   ? true
   : false
