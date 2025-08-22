@@ -489,7 +489,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
   }
 
   function isField(field: Field<any, any> | FieldArray<any>): field is Field<any, any> {
-    return (field as Field<any, any>)._isTouched.value !== undefined
+    return (field as Field<any, any>)._isTouched !== undefined
   }
 
   function getFieldWithTrackedDependencies<TFieldArray extends Field<any, any> | FieldArray<any>>(
