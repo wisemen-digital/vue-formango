@@ -51,6 +51,10 @@ export interface Field<TValue, TDefaultValue = undefined> {
    */
   '_path': ComputedRef<string | null>
   /**
+   * Blur the field and all it's children.
+   */
+  'blurAll': () => void
+  /**
    * The errors associated with the field and its children.
    */
   'errors': ComputedRef<FormattedError<TValue>[]>
@@ -151,6 +155,7 @@ export interface FieldArray<TValue> {
    * Add a new field at the end of the array.
    */
   append: (value?: TValue) => void
+  blurAll: () => void
   /**
    * Empty the array.
    */
@@ -160,9 +165,14 @@ export interface FieldArray<TValue> {
    */
   errors: ComputedRef<FormattedError<TValue[]>[]>
   /**
+   * Blur the field and all it's children.
+   */
+
+  /**
    * Array of unique ids of the fields.
    */
   fields: Ref<string[]>
+
   /**
    * Insert a new field at the given index.
    * @param index The index of the field to insert.

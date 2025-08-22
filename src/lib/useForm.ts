@@ -219,7 +219,16 @@ export function useForm<TSchema extends StandardSchemaV1>(
       ...registeredFields.values(),
       ...registeredFieldArrays.values(),
     ].filter((field) => {
-      return field._path.value?.startsWith(path) && field._path.value !== path
+      if (field._path.value == null) {
+        return false
+      }
+
+      const { isPart } = isSubPath({
+        childPath: field._path.value,
+        parentPath: path,
+      })
+
+      return isPart
     })
   }
 
@@ -235,7 +244,28 @@ export function useForm<TSchema extends StandardSchemaV1>(
       'isTouched': computed(() => false),
       'isValid': computed(() => false),
       '_isTouched': ref(false),
+
       '_path': computed(() => path),
+      'blurAll': () => {
+        field._isTouched.value = true
+
+        for (const registeredField of [
+          ...registeredFields.values(),
+        ].filter((registeredField) => {
+          if (field._path.value == null || registeredField._path.value == null) {
+            return false
+          }
+
+          const { isPart } = isSubPath({
+            childPath: registeredField._path.value,
+            parentPath: field._path.value,
+          })
+
+          return isPart
+        })) {
+          registeredField.blurAll()
+        }
+      },
       'errors': computed(() => []),
       'modelValue': computed(() => defaultOrExistingValue),
       'rawErrors': computed(() => []),
@@ -393,6 +423,24 @@ export function useForm<TSchema extends StandardSchemaV1>(
       isValid: computed(() => false),
       _path: computed(() => path),
       append,
+      blurAll: () => {
+        for (const registeredField of [
+          ...registeredFields.values(),
+        ].filter((registeredField) => {
+          if (fieldArray._path.value == null || registeredField._path.value == null) {
+            return false
+          }
+
+          const { isPart } = isSubPath({
+            childPath: registeredField._path.value,
+            parentPath: fieldArray._path.value,
+          })
+
+          return isPart
+        })) {
+          registeredField.blurAll()
+        }
+      },
       empty,
       errors: computed(() => []),
       fields,
@@ -441,7 +489,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
   }
 
   function isField(field: Field<any, any> | FieldArray<any>): field is Field<any, any> {
-    return (field as Field<any, any>)._isTouched !== undefined
+    return (field as Field<any, any>)._isTouched.value !== undefined
   }
 
   function getFieldWithTrackedDependencies<TFieldArray extends Field<any, any> | FieldArray<any>>(
@@ -501,7 +549,7 @@ export function useForm<TSchema extends StandardSchemaV1>(
 
       const children = getChildPaths(field._path.value)
 
-      const areAnyOfItsChildrenTouched = children.some((child) => child.isTouched)
+      const areAnyOfItsChildrenTouched = children.some((child) => child.isTouched.value)
 
       if (areAnyOfItsChildrenTouched) {
         return true

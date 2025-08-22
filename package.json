@@ -1,7 +1,7 @@
 {
   "name": "formango",
   "type": "module",
-  "version": "3.1.0",
+  "version": "3.2.0-beta.0",
   "description": "",
   "author": "Wouter Laermans <wouter.laermans@appwise.be>",
   "license": "MIT",
@@ -30,6 +30,7 @@
     "release": "bumpp && npm publish",
     "start": "esno src/index.ts",
     "test": "vitest",
+    "pub:beta": "pnpm publish --no-git-checks --access public --tag beta",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
