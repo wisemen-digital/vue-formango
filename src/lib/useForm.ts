@@ -896,9 +896,9 @@ export function useForm<TSchema extends StandardSchemaV1>(
       return
     }
 
-    await onSubmitCb(validatedResult.value)
-
     initialFormState.value = deepClone(currentFormState.value) as DeepPartial<StandardSchemaV1.InferOutput<TSchema>>
+
+    await onSubmitCb(validatedResult.value)
 
     isSubmitting.value = false
   }
